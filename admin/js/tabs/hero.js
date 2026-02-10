@@ -155,13 +155,23 @@ export async function renderHero(container) {
       </button>
 
       <!-- Preview -->
-      <div id="heroPreview" style="border:1px solid #374151; border-radius:0.75rem; width:100%; aspect-ratio:16/9; background:#000; overflow:hidden; position:relative; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); container-type: inline-size;">
+      <div id="heroPreview" style="border:1px solid #374151; border-radius:0.75rem; width:100%; background:#000; overflow:hidden; position:relative; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); container-type: inline-size; transition: aspect-ratio 0.2s ease;">
         <p style="text-align:center; color:#9ca3af; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);">Carregando Preview...</p>
       </div>
     </div>
   `;
 
   // Refs
+  const previewContainer = container.querySelector('#heroPreview');
+
+  // Sincroniza o aspecto do preview com a proporção real da tela (sua sugestão)
+  const syncAspectRatio = () => {
+    const ratio = window.innerWidth / window.innerHeight;
+    previewContainer.style.aspectRatio = ratio.toFixed(4);
+  };
+  syncAspectRatio();
+  window.addEventListener('resize', syncAspectRatio);
+
   const titleInput = container.querySelector('#heroTitle');
   const subtitleInput = container.querySelector('#heroSubtitle');
   const imageInput = container.querySelector('#heroImage');
@@ -266,8 +276,8 @@ export async function renderHero(container) {
       <div style="position:absolute; inset:0; background:rgba(0,0,0,${overlay/100});"></div>
       <div style="position:absolute; top:0; left:0; right:0; height:${topBar}%; background:#000; z-index:2;"></div>
       <div style="position:absolute; bottom:0; left:0; right:0; height:${bottomBar}%; background:#000; z-index:2;"></div>
-      <h1 style="position:absolute; left:${tpx}%; top:${tpy}%; transform:translate(-50%,-50%); color:white; font-family:'Playfair Display',serif; font-size:clamp(12px, 6cqw, ${tfs}px); font-weight:bold; text-align:center; text-shadow:2px 2px 4px rgba(0,0,0,0.7); z-index:3; line-height:1.15; width:90%; white-space:normal; pointer-events:none;">${titleInput.value || ''}</h1>
-      <p style="position:absolute; left:${spx}%; top:${spy}%; transform:translate(-50%,-50%); color:#e5e7eb; font-size:clamp(8px, 3.5cqw, ${sfs}px); text-align:center; text-shadow:1px 1px 2px rgba(0,0,0,0.7); z-index:3; line-height:1.6; width:80%; white-space:normal; pointer-events:none;">${subtitleInput.value || ''}</p>
+      <h1 style="position:absolute; left:${tpx}%; top:${tpy}%; transform:translate(-50%,-50%); color:white; font-family:'Playfair Display',serif; font-size:clamp(14px, 6cqw, ${tfs}px); font-weight:bold; text-align:center; text-shadow:2px 2px 4px rgba(0,0,0,0.7); z-index:3; line-height:1.15; width:90%; max-width:800px; white-space:normal; pointer-events:none;">${titleInput.value || ''}</h1>
+      <p style="position:absolute; left:${spx}%; top:${spy}%; transform:translate(-50%,-50%); color:#e5e7eb; font-size:clamp(10px, 3.5cqw, ${sfs}px); text-align:center; text-shadow:1px 1px 2px rgba(0,0,0,0.7); z-index:3; line-height:1.6; width:80%; max-width:600px; white-space:normal; pointer-events:none;">${subtitleInput.value || ''}</p>
     `;
   }
 
