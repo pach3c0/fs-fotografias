@@ -1,0 +1,12 @@
+node_modules
+.git
+.env
+.env.local
+.DS_Store
+*.log
+*.md
+clear-all-data.js
+logo-estudio.png
+uploads/*
+!uploads/.gitkeep
+.vercel

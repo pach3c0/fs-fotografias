@@ -1,0 +1,3500 @@
+<!DOCTYPE html>
+<!-- Version: 3.2.0 (2026-02-04 - Valores default removidos) -->
+<html lang="pt-BR" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CLIQUE·ZOOM | Painel Administrativo</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/assets/css/tailwind.css">
+    <link rel="stylesheet" href="/assets/css/shared.css">
+    <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+
+    <style>
+        .nav-item.active { background: #1f2937; color: white; }
+        .nav-item { color: #9ca3af; }
+        .nav-item:hover { background: #1f2937; color: white; }
+
+        /* Slider estilo WordPress */
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: #e5e7eb;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #171717;
+            cursor: pointer;
+            border: 2px solid white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        }
+
+        /* Preview container */
+        .preview-frame {
+            background: #000;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+
+        /* Animação suave */
+        .fade-in { animation: fadeIn 0.6s ease-in-out; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Mobile responsiveness */
+        @media (max-width: 768px) {
+            .admin-sidebar {
+                position: fixed;
+                left: -100%;
+                top: 0;
+                bottom: 0;
+                z-index: 50;
+                transition: left 0.3s ease;
+            }
+            .admin-sidebar.open {
+                left: 0;
+            }
+            .mobile-overlay {
+                display: none;
+                position: fixed;
+                inset: 0;
+                background: rgba(0,0,0,0.5);
+                z-index: 40;
+            }
+            .mobile-overlay.show {
+                display: block;
+            }
+        }
+
+        /* Control group styling */
+        .control-group {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+        .control-group-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Pro Editor Styling */
+        .editor-container {
+            cursor: grab;
+            position: relative;
+            user-select: none;
+        }
+        .editor-container:active {
+            cursor: grabbing;
+        }
+        
+        /* Grid of Thirds */
+        .grid-thirds {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            grid-template-rows: 1fr 1fr 1fr;
+            pointer-events: none;
+        }
+        .grid-thirds div {
+            border: 0.5px solid rgba(255, 255, 255, 0.3);
+        }
+
+        /* Aspect Ratio Buttons */
+        .ratio-btn {
+            position: relative;
+            transition: all 0.2s ease;
+        }
+        .ratio-btn.active {
+            border-color: #171717;
+            background-color: #f5f5f5;
+        }
+
+        /* Upload Progress Bar */
+        #upload-progress-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 9999;
+            background: rgba(0, 0, 0, 0.95);
+            padding: 20px;
+            transform: translateY(-100%);
+            transition: transform 0.3s ease;
+            pointer-events: none;
+        }
+        #upload-progress-container.active {
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+        #login-screen.hidden {
+            display: none !important;
+            pointer-events: none;
+        }
+        .progress-bar-bg {
+            height: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #10b981, #059669);
+            transition: width 0.3s ease;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+
+    <!-- UPLOAD PROGRESS BAR -->
+    <div id="upload-progress-container">
+        <div class="max-w-md mx-auto text-white">
+            <div class="flex items-center justify-between mb-2">
+                <span id="upload-progress-text" class="text-sm font-medium">Fazendo upload...</span>
+                <span id="upload-progress-percent" class="text-sm font-bold">0%</span>
+            </div>
+            <div class="progress-bar-bg">
+                <div id="upload-progress-bar" class="progress-bar-fill" style="width: 0%"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script de Login (precisa estar antes do formulário) -->
+    <script src="/assets/js/api-helper.js"></script>
+    <script>
+        let authToken = null;
+        let isLoggedIn = false;
+
+        async function handleLogin(e) {
+            const password = document.getElementById('login-password').value;
+            const button = e.target.querySelector('button[type="submit"]');
+            const originalText = button.textContent;
+
+            button.disabled = true;
+            button.textContent = 'Aguarde...';
+
+            try {
+                const data = await api.login(password);
+
+                if (!data || !data.success) {
+                    alert(data?.error || 'Senha incorreta');
+                    button.disabled = false;
+                    button.textContent = originalText;
+                    return;
+                }
+
+                authToken = data.token;
+                localStorage.setItem('authToken', authToken);
+                localStorage.setItem('tokenExpires', Date.now() + 7 * 24 * 60 * 60 * 1000);
+                isLoggedIn = true;
+
+                const loginScreen = document.getElementById('login-screen');
+                const adminPanel = document.getElementById('admin-panel');
+                if (loginScreen) {
+                    loginScreen.style.display = 'none';
+                    loginScreen.classList.add('hidden');
+                }
+                if (adminPanel) {
+                    adminPanel.style.display = 'flex';
+                    adminPanel.classList.remove('hidden');
+                }
+                document.getElementById('login-password').value = '';
+
+                // Render inicial do painel
+                try {
+                    switchTab('hero');
+                } catch (e) {
+                    console.warn('Erro ao renderizar tab inicial:', e);
+                }
+
+                setTimeout(() => { try { lucide.createIcons(); } catch(e){} }, 100);
+                setTimeout(() => {
+                    if(typeof loadDados === 'function') loadDados().catch(()=>{});
+                    if(typeof loadSiteConfig === 'function') loadSiteConfig().catch(()=>{});
+                }, 200);
+                setTimeout(() => { if (typeof switchTab === 'function') { try { switchTab('hero'); } catch(e){} } }, 350);
+                setTimeout(() => { if(typeof renderHero === 'function') try { renderHero(); } catch(e){} }, 400);
+
+            } catch (error) {
+                alert('Erro: ' + error.message);
+                button.disabled = false;
+                button.textContent = originalText;
+            }
+        }
+
+        // Placeholders para funções que serão definidas depois
+        // Isso evita erros de "Can't find variable" nos onclick
+        function switchTab(...args) {
+            if (typeof window.__switchTabReal === 'function') {
+                return window.__switchTabReal(...args);
+            }
+        }
+        // Logout será definido depois
+        function resetToDefaults(...args) {
+            if (typeof window.__resetToDefaultsReal === 'function') {
+                return window.__resetToDefaultsReal(...args);
+            }
+        }
+        function saveDados(...args) {
+            if (typeof window.__saveDadosReal === 'function') {
+                return window.__saveDadosReal(...args);
+            }
+        }
+        window.handleLogin = handleLogin;
+
+        // Mobile sidebar control
+        function toggleMobileSidebar() {
+            const sidebar = document.getElementById('admin-sidebar');
+            const overlay = document.getElementById('mobile-overlay');
+            if (sidebar && overlay) {
+                sidebar.classList.toggle('open');
+                overlay.classList.toggle('show');
+            }
+        }
+
+        function closeMobileSidebar() {
+            const sidebar = document.getElementById('admin-sidebar');
+            const overlay = document.getElementById('mobile-overlay');
+            if (sidebar && overlay) {
+                sidebar.classList.remove('open');
+                overlay.classList.remove('show');
+            }
+        }
+
+        // Fechar sidebar ao clicar em item (mobile)
+        window.addEventListener('DOMContentLoaded', () => {
+            const navItems = document.querySelectorAll('.nav-item');
+            navItems.forEach(item => {
+                item.addEventListener('click', () => {
+                    if (window.innerWidth < 768) {
+                        closeMobileSidebar();
+                    }
+                });
+            });
+        });
+    </script>
+
+    <!-- LOGIN SCREEN -->
+    <div id="login-screen" class="fixed inset-0 bg-gradient-to-br from-neutral-900 to-gray-800 flex items-center justify-center z-50">
+        <div class="bg-white rounded-xl shadow-2xl p-8 w-full max-w-md">
+            <div class="text-center mb-8">
+                <h1 class="text-3xl font-serif font-bold text-neutral-900 mb-2">CLIQUE·ZOOM</h1>
+                <p class="text-gray-500 text-sm tracking-widest uppercase">Painel Administrativo</p>
+            </div>
+
+            <form id="login-form" class="space-y-4" onsubmit="event.preventDefault(); handleLogin(event);">
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-2">Senha do Admin</label>
+                    <input
+                        type="password"
+                        id="login-password"
+                        placeholder="Insira a senha"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-neutral-900 focus:ring-2 focus:ring-neutral-900/20"
+                        required
+                    >
+                </div>
+
+                <button
+                    type="submit"
+                    class="w-full bg-neutral-900 text-white py-3 rounded-lg font-semibold hover:bg-gray-800 transition-colors"
+                >
+                    Entrar no Painel
+                </button>
+            </form>
+
+            <div class="mt-6 pt-6 border-t border-gray-200">
+                <a href="/public/" class="text-sm text-gray-600 hover:text-neutral-900 transition-colors flex items-center justify-center gap-2">
+                    <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                    Voltar ao Site
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- ADMIN PANEL -->
+    <div id="admin-panel" class="hidden flex h-screen overflow-hidden">
+
+        <!-- Mobile Overlay -->
+        <div id="mobile-overlay" class="mobile-overlay" onclick="closeMobileSidebar()"></div>
+
+        <!-- SIDEBAR -->
+        <aside id="admin-sidebar" class="admin-sidebar w-64 bg-neutral-900 text-white flex flex-col border-r border-gray-800 flex-shrink-0">
+            <div class="p-6 border-b border-gray-800">
+                <h2 class="font-serif text-xl font-bold tracking-wide">CLIQUE·ZOOM</h2>
+                <p class="text-xs text-gray-400 mt-1">Admin v3.0 Pro</p>
+            </div>
+
+            <nav class="flex-1 overflow-y-auto p-4 space-y-2">
+                <button onclick="switchTab('hero')" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium active" data-tab="hero">
+                    <i data-lucide="image" class="w-4 h-4"></i> Hero / Capa
+                </button>
+                <button onclick="switchTab('sobre')" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium" data-tab="sobre">
+                    <i data-lucide="user" class="w-4 h-4"></i> Sobre
+                </button>
+                <button onclick="switchTab('portfolio')" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium" data-tab="portfolio">
+                    <i data-lucide="grid-3x3" class="w-4 h-4"></i> Portfólio
+                </button>
+                <button onclick="switchTab('albuns')" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium" data-tab="albuns">
+                    <i data-lucide="folder" class="w-4 h-4"></i> Álbuns
+                </button>
+                <button onclick="switchTab('estudio')" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium" data-tab="estudio">
+                    <i data-lucide="building" class="w-4 h-4"></i> Estúdio
+                </button>
+                <button onclick="switchTab('faq')" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium" data-tab="faq">
+                    <i data-lucide="help-circle" class="w-4 h-4"></i> FAQ
+                </button>
+                <button onclick="switchTab('manutencao')" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium" data-tab="manutencao">
+                    <i data-lucide="shield" class="w-4 h-4"></i> Manutenção
+                </button>
+                <button onclick="switchTab('footer')" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium" data-tab="footer">
+                    <i data-lucide="link" class="w-4 h-4"></i> Rodapé
+                </button>
+                <button onclick="switchTab('newsletter')" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium" data-tab="newsletter">
+                    <i data-lucide="mail" class="w-4 h-4"></i> Newsletter
+                </button>
+                <button onclick="switchTab('sessoes')" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium" data-tab="sessoes">
+                    <i data-lucide="photo" class="w-4 h-4"></i> Sessões
+                </button>
+            </nav>
+
+            <div class="p-4 border-t border-gray-800 space-y-2">
+                <button onclick="handleLogout()" class="w-full flex items-center gap-3 px-4 py-3 text-gray-400 hover:text-white text-sm rounded-lg hover:bg-gray-800 transition-colors">
+                    <i data-lucide="log-out" class="w-4 h-4"></i> Sair
+                </button>
+                <a href="/public/" target="_blank" class="w-full flex items-center gap-3 px-4 py-3 text-gray-400 hover:text-white text-sm rounded-lg hover:bg-gray-800 transition-colors">
+                    <i data-lucide="external-link" class="w-4 h-4"></i> Ver Site
+                </a>
+            </div>
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <main class="flex-1 flex flex-col overflow-hidden bg-gray-100">
+            <header class="bg-white border-b border-gray-200 px-4 md:px-8 py-4 md:py-5 flex justify-between items-center flex-shrink-0">
+                <div class="flex items-center gap-3">
+                    <button onclick="toggleMobileSidebar()" class="md:hidden p-2 text-gray-600 hover:text-gray-900">
+                        <i data-lucide="menu" class="w-5 h-5"></i>
+                    </button>
+                    <div>
+                        <h1 id="page-title" class="text-xl md:text-2xl font-serif font-bold text-gray-900">Hero / Capa</h1>
+                        <p class="text-xs md:text-sm text-gray-500 mt-1 hidden sm:block">Edite a seção principal do seu site</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2 md:gap-3">
+                    <button onclick="resetToDefaults()" class="px-3 md:px-4 py-2 text-gray-600 hover:text-gray-900 text-xs md:text-sm font-medium transition-colors">
+                        <i data-lucide="rotate-ccw" class="w-4 h-4 inline mr-1"></i><span class="hidden sm:inline"> Resetar</span>
+                    </button>
+                    <button onclick="saveDados()" class="bg-neutral-900 text-white px-4 md:px-6 py-2 rounded-lg text-xs md:text-sm font-semibold hover:bg-gray-800 transition-colors flex items-center gap-2">
+                        <i data-lucide="save" class="w-4 h-4"></i><span class="hidden sm:inline"> Salvar</span><span class="sm:hidden">Salvar</span>
+                    </button>
+                </div>
+            </header>
+
+            <div id="content-area" class="flex-1 overflow-y-auto p-4 md:p-6"></div>
+        </main>
+    </div>
+
+    <script>
+
+        // Variáveis adicionais do admin
+        let currentTab = 'hero';
+        let autoSaveTimeout; // Declarar no topo para usar em updatePreview()
+        let isSaving = false;
+        let savePending = false;
+
+        let maintenanceConfig = {
+            enabled: false,
+            title: 'Estamos em manutenção',
+            message: 'Estamos ajustando alguns detalhes. Volte em breve.'
+        };
+
+        // Dados padrão - VAZIOS (sem valores default)
+        const defaultData = {
+            hero: {
+                title: "",
+                subtitle: "",
+                image: "",
+                imageScale: 1,
+                imagePosX: 50,
+                imagePosY: 50,
+                titlePosX: 50,
+                titlePosY: 40,
+                subtitlePosX: 50,
+                subtitlePosY: 55,
+                titleSize: 48,
+                subtitleSize: 18,
+                topBarHeight: 0,
+                bottomBarHeight: 0,
+                overlayOpacity: 30
+            },
+            about: {
+                title: "",
+                text: "",
+                image: ""
+            },
+            portfolio: [],
+            albums: [],
+            studio: {
+                title: "",
+                description: "",
+                address: "",
+                hours: "",
+                whatsapp: "",
+                whatsappMessages: [],
+                photos: []
+            },
+            footer: {
+                socialMedia: { instagram: '', facebook: '', linkedin: '', tiktok: '', youtube: '', email: '' },
+                quickLinks: [],
+                newsletter: { enabled: true, title: '', description: '' },
+                copyright: ''
+            }
+        };
+
+        let appData = JSON.parse(JSON.stringify(defaultData));
+
+        function forceLogout(message) {
+            authToken = null;
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('tokenExpires');
+            
+            isLoggedIn = false;
+            const adminPanel = document.getElementById('admin-panel');
+            const loginScreen = document.getElementById('login-screen');
+            if (adminPanel) {
+                adminPanel.classList.add('hidden');
+                adminPanel.style.display = 'none';
+            }
+            if (loginScreen) {
+                loginScreen.classList.remove('hidden');
+                loginScreen.style.display = 'flex';
+            }
+            const loginPassword = document.getElementById('login-password');
+            if (loginPassword) loginPassword.value = '';
+
+            if (message) alert(message);
+            console.log('✅ Logout realizado');
+        }
+
+        function handleLogout() {
+            if (confirm('Tem certeza que quer sair?')) {
+                forceLogout();
+            }
+        }
+
+        // Verificar token ao iniciar
+        async function checkToken() {
+            const token = localStorage.getItem('authToken');
+            const expires = localStorage.getItem('tokenExpires');
+
+            if (!token || !expires) {
+                return;
+            }
+
+            if (Date.now() > parseInt(expires)) {
+                // Token expirou
+                forceLogout('Sua sessão expirou. Faça login novamente.');
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/auth/verify', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+                if (!data?.valid) {
+                    forceLogout('Sua sessão expirou. Faça login novamente.');
+                    return;
+                }
+            } catch (error) {
+                forceLogout('Sua sessão expirou. Faça login novamente.');
+                return;
+            }
+
+            // Token ainda é válido
+            authToken = token;
+            isLoggedIn = true;
+            const loginScreen = document.getElementById('login-screen');
+            const adminPanel = document.getElementById('admin-panel');
+            if (loginScreen) {
+                loginScreen.classList.add('hidden');
+                loginScreen.style.display = 'none';
+            }
+            if (adminPanel) {
+                adminPanel.classList.remove('hidden');
+                adminPanel.style.display = 'flex';
+            }
+            console.log('✅ Sessão restaurada');
+            
+            // Carregar dados
+            loadDados().then(() => {
+                loadSiteConfig().then(() => {
+                    lucide.createIcons();
+                    try {
+                        switchTab('hero');
+                    } catch (e) {
+                        console.warn('Erro ao renderizar tab inicial:', e);
+                    }
+                });
+            });
+        }
+
+        function switchTab(tabName) {
+            currentTab = tabName;
+
+            document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
+            const activeBtn = document.querySelector(`[data-tab="${tabName}"]`);
+            if (activeBtn) {
+                activeBtn.classList.add('active');
+            }
+
+            const titles = {
+                hero: 'Hero / Capa',
+                sobre: 'Seção Sobre',
+                portfolio: 'Portfólio',
+                albuns: 'Álbuns',
+                estudio: 'Estúdio',
+                manutencao: 'Manutenção',
+                footer: 'Rodapé',
+                newsletter: 'Newsletter',
+                faq: 'FAQ - Perguntas Frequentes',
+                sessoes: 'Sessões de Clientes'
+            };
+            const pageTitle = document.getElementById('page-title');
+            if (pageTitle) {
+                pageTitle.textContent = titles[tabName] || 'Painel Administrativo';
+            }
+
+            switch(tabName) {
+                case 'hero': renderHero(); break;
+                case 'sobre': renderSobre(); break;
+                case 'portfolio': renderPortfolio(); break;
+                case 'albuns': renderAlbuns(); break;
+                case 'estudio': renderEstudio(); break;
+                case 'faq': renderFAQ(); break;
+                case 'manutencao': renderMaintenance(); break;
+                case 'footer': renderFooter(); break;
+                case 'newsletter': renderNewsletter(); break;
+                case 'sessoes': renderSessoes(); break;
+                default: renderHero(); break;
+            }
+
+            lucide.createIcons();
+        }
+
+        // Garantir acesso global para handlers inline
+        window.__switchTabReal = switchTab;
+        window.__handleLogoutReal = handleLogout;
+        window.__resetToDefaultsReal = resetToDefaults;
+        window.__saveDadosReal = saveDados;
+        window.switchTab = switchTab;
+        window.handleLogout = handleLogout;
+        window.resetToDefaults = resetToDefaults;
+        window.saveDados = saveDados;
+
+        function resolveImagePath(url) {
+            if (!url) return '';
+            if (url.startsWith('http') || url.startsWith('/')) return url;
+            return `/assets/${url}`;
+        }
+
+        function renderHero() {
+            const h = appData.hero;
+            const imgSrc = resolveImagePath(h.image);
+
+            const html = `
+                <div class="grid grid-cols-1 xl:grid-cols-2 gap-6 h-full">
+                    <!-- PAINEL DE CONTROLES -->
+                    <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden flex flex-col">
+                        <div class="p-4 border-b border-gray-200 bg-gray-50">
+                            <h2 class="font-semibold text-gray-900 flex items-center gap-2">
+                                <i data-lucide="sliders-horizontal" class="w-4 h-4"></i>
+                                Controles do Hero
+                            </h2>
+                        </div>
+
+                        <div class="flex-1 overflow-y-auto p-4 space-y-4">
+                            <!-- TEXTOS -->
+                            <div class="control-group">
+                                <div class="control-group-title">
+                                    <i data-lucide="type" class="w-4 h-4"></i> Textos
+                                </div>
+                                <div class="space-y-3">
+                                    <div>
+                                        <label class="block text-xs font-medium text-gray-600 mb-1">Título Principal</label>
+                                            <input type="text" id="hero-title" value="${h.title}"
+                                                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-neutral-900"
+                                                oninput="appData.hero.title = this.value; updatePreview(); saveDados();">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-medium text-gray-600 mb-1">Subtítulo</label>
+                                            <textarea id="hero-subtitle" rows="2"
+                                                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-neutral-900"
+                                                oninput="appData.hero.subtitle = this.value; updatePreview(); saveDados();">${h.subtitle}</textarea>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- IMAGEM -->
+                            <div class="control-group">
+                                <div class="control-group-title">
+                                    <i data-lucide="image" class="w-4 h-4"></i> Imagem de Fundo
+                                </div>
+                                <div class="space-y-3">
+                                    <div class="flex gap-2">
+                                        <input type="text" id="hero-image" value="${h.image}"
+                                                class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-neutral-900"
+                                                oninput="appData.hero.image = this.value; updatePreview(); saveDados();">
+                                        <label class="px-4 py-2 bg-neutral-900 text-white rounded-lg text-sm font-medium cursor-pointer hover:bg-gray-800">
+                                            Upload
+                                            <input type="file" accept=".jpg,.jpeg,.png" class="hidden" onchange="handleHeroUpload(event)">
+                                        </label>
+                                    </div>
+
+                                    <div class="grid grid-cols-3 gap-3">
+                                        <div>
+                                            <label class="block text-xs font-medium text-gray-600 mb-1">Zoom: <span id="val-scale">${h.imageScale}</span>x</label>
+                                                <input type="range" id="hero-scale" min="0.5" max="2" step="0.05" value="${h.imageScale}" oninput="appData.hero.imageScale = parseFloat(this.value); updatePreview(); saveDados();">
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-medium text-gray-600 mb-1">Posição X: <span id="val-imgX">${h.imagePosX}</span>%</label>
+                                                <input type="range" id="hero-img-x" min="0" max="100" step="1" value="${h.imagePosX}" oninput="appData.hero.imagePosX = parseInt(this.value); updatePreview(); saveDados();">
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-medium text-gray-600 mb-1">Posição Y: <span id="val-imgY">${h.imagePosY}</span>%</label>
+                                                <input type="range" id="hero-img-y" min="0" max="100" step="1" value="${h.imagePosY}" oninput="appData.hero.imagePosY = parseInt(this.value); updatePreview(); saveDados();">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- POSIÇÃO DO TÍTULO -->
+                            <div class="control-group">
+                                <div class="control-group-title">
+                                    <i data-lucide="move" class="w-4 h-4"></i> Posição do Título
+                                </div>
+                                <div class="grid grid-cols-3 gap-3">
+                                    <div>
+                                        <label class="block text-xs font-medium text-gray-600 mb-1">Horizontal: <span id="val-titleX">${h.titlePosX}</span>%</label>
+                                            <input type="range" id="hero-title-x" min="0" max="100" step="1" value="${h.titlePosX}" oninput="appData.hero.titlePosX = parseInt(this.value); updatePreview(); saveDados();">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-medium text-gray-600 mb-1">Vertical: <span id="val-titleY">${h.titlePosY}</span>%</label>
+                                            <input type="range" id="hero-title-y" min="0" max="100" step="1" value="${h.titlePosY}" oninput="appData.hero.titlePosY = parseInt(this.value); updatePreview(); saveDados();">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-medium text-gray-600 mb-1">Tamanho: <span id="val-titleSize">${h.titleSize}</span>px</label>
+                                            <input type="range" id="hero-title-size" min="20" max="80" step="1" value="${h.titleSize}" oninput="appData.hero.titleSize = parseInt(this.value); updatePreview(); saveDados();">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- POSIÇÃO DO SUBTÍTULO -->
+                            <div class="control-group">
+                                <div class="control-group-title">
+                                    <i data-lucide="move" class="w-4 h-4"></i> Posição do Subtítulo
+                                </div>
+                                <div class="grid grid-cols-3 gap-3">
+                                    <div>
+                                        <label class="block text-xs font-medium text-gray-600 mb-1">Horizontal: <span id="val-subX">${h.subtitlePosX}</span>%</label>
+                                            <input type="range" id="hero-sub-x" min="0" max="100" step="1" value="${h.subtitlePosX}" oninput="appData.hero.subtitlePosX = parseInt(this.value); updatePreview(); saveDados();">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-medium text-gray-600 mb-1">Vertical: <span id="val-subY">${h.subtitlePosY}</span>%</label>
+                                            <input type="range" id="hero-sub-y" min="0" max="100" step="1" value="${h.subtitlePosY}" oninput="appData.hero.subtitlePosY = parseInt(this.value); updatePreview(); saveDados();">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-medium text-gray-600 mb-1">Tamanho: <span id="val-subSize">${h.subtitleSize}</span>px</label>
+                                            <input type="range" id="hero-sub-size" min="10" max="36" step="1" value="${h.subtitleSize}" oninput="appData.hero.subtitleSize = parseInt(this.value); updatePreview(); saveDados();">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- FAIXAS CINEMA -->
+                            <div class="control-group">
+                                <div class="control-group-title">
+                                    <i data-lucide="film" class="w-4 h-4"></i> Faixas Cinema (Letterbox)
+                                </div>
+                                <p class="text-xs text-gray-500 mb-3">Adicione faixas pretas no topo e/ou na base para efeito cinematográfico</p>
+                                <div class="grid grid-cols-3 gap-3">
+                                    <div>
+                                        <label class="block text-xs font-medium text-gray-600 mb-1">Faixa Superior: <span id="val-topBar">${h.topBarHeight}</span>%</label>
+                                            <input type="range" id="hero-top-bar" min="0" max="25" step="1" value="${h.topBarHeight}" oninput="appData.hero.topBarHeight = parseInt(this.value); updatePreview(); saveDados();">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-medium text-gray-600 mb-1">Faixa Inferior: <span id="val-botBar">${h.bottomBarHeight}</span>%</label>
+                                            <input type="range" id="hero-bot-bar" min="0" max="25" step="1" value="${h.bottomBarHeight}" oninput="appData.hero.bottomBarHeight = parseInt(this.value); updatePreview(); saveDados();">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-medium text-gray-600 mb-1">Escurecimento: <span id="val-overlay">${h.overlayOpacity}</span>%</label>
+                                            <input type="range" id="hero-overlay" min="0" max="70" step="5" value="${h.overlayOpacity}" oninput="appData.hero.overlayOpacity = parseInt(this.value); updatePreview(); saveDados();">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- PREVIEW -->
+                    <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden flex flex-col">
+                        <div class="p-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
+                            <h2 class="font-semibold text-gray-900 flex items-center gap-2">
+                                <i data-lucide="monitor" class="w-4 h-4"></i>
+                                Preview em Tempo Real
+                            </h2>
+                            <span class="text-xs text-gray-500 bg-green-100 text-green-700 px-2 py-1 rounded">Ao vivo</span>
+                        </div>
+
+                        <div class="flex-1 p-4 bg-gray-900 flex items-center justify-center">
+                            <!-- Container do Preview - simula exatamente o site -->
+                            <div class="w-full max-w-3xl">
+                                <!-- Navbar simulada -->
+                                <div class="bg-white h-8 flex items-center px-4 rounded-t-lg">
+                                    <span class="font-serif text-xs font-bold text-neutral-900">CLIQUE·ZOOM</span>
+                                    <div class="ml-auto flex gap-3 text-[8px] text-gray-500">
+                                        <span>HOME</span>
+                                        <span>SOBRE</span>
+                                        <span>PORTFÓLIO</span>
+                                    </div>
+                                </div>
+
+                                <!-- Hero Section - IDÊNTICO ao site -->
+                                <div id="preview-hero" class="relative bg-black overflow-hidden" style="height: 300px;">
+                                    <!-- Imagem de fundo -->
+                                    <img id="preview-img" src="${imgSrc}" alt="Preview"
+                                        class="absolute inset-0 w-full h-full object-cover transition-all duration-200"
+                                        style="transform: scale(${h.imageScale}); transform-origin: ${h.imagePosX}% ${h.imagePosY}%;">
+
+                                    <!-- Overlay escuro -->
+                                    <div id="preview-overlay" class="absolute inset-0 transition-all duration-200"
+                                        style="background: rgba(0,0,0,${h.overlayOpacity/100})"></div>
+
+                                    <!-- Faixa superior -->
+                                    <div id="preview-top-bar" class="absolute top-0 left-0 right-0 bg-black transition-all duration-200"
+                                        style="height: ${h.topBarHeight}%"></div>
+
+                                    <!-- Faixa inferior -->
+                                    <div id="preview-bot-bar" class="absolute bottom-0 left-0 right-0 bg-black transition-all duration-200"
+                                        style="height: ${h.bottomBarHeight}%"></div>
+
+                                    <!-- Conteúdo de texto -->
+                                    <div class="absolute inset-0 z-10">
+                                        <h1 id="preview-title" class="font-serif font-bold text-white text-center absolute transition-all duration-200"
+                                            style="left: ${h.titlePosX}%; top: ${h.titlePosY}%; transform: translate(-50%, -50%); font-size: ${h.titleSize * 0.4}px; width: 90%;">
+                                            ${h.title}
+                                        </h1>
+                                        <p id="preview-subtitle" class="text-gray-200 font-light text-center absolute transition-all duration-200"
+                                            style="left: ${h.subtitlePosX}%; top: ${h.subtitlePosY}%; transform: translate(-50%, -50%); font-size: ${h.subtitleSize * 0.4}px; width: 80%; max-width: 400px;">
+                                            ${h.subtitle}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <!-- Seção Sobre simulada -->
+                                <div class="bg-white p-4 rounded-b-lg">
+                                    <div class="flex gap-4">
+                                        <div class="flex-1">
+                                            <h3 class="font-serif text-sm font-bold text-gray-900 mb-1">Quem Somos</h3>
+                                            <p class="text-[8px] text-gray-500 leading-relaxed">Somos fotógrafos que acreditam na força da simplicidade...</p>
+                                        </div>
+                                        <div class="w-16 h-16 bg-gray-200 rounded"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="p-3 border-t border-gray-200 bg-gray-50 text-center">
+                            <p class="text-xs text-gray-500">O preview mostra exatamente como ficará no site</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('content-area').innerHTML = html;
+            lucide.createIcons();
+        }
+
+        async function loadSiteConfig() {
+            try {
+                const res = await fetch('/api/site-config');
+                if (!res.ok) return;
+                const data = await res.json();
+                if (data?.maintenance) {
+                    maintenanceConfig = {
+                        enabled: data.maintenance.enabled === true,
+                        title: data.maintenance.title || maintenanceConfig.title,
+                        message: data.maintenance.message || maintenanceConfig.message
+                    };
+                }
+                if (currentTab === 'manutencao') {
+                    renderMaintenance();
+                }
+            } catch (err) {
+                console.warn('Erro ao carregar config do site:', err);
+            }
+        }
+
+        async function saveSiteConfig() {
+            const enabled = document.getElementById('maintenance-enabled')?.checked;
+            const title = document.getElementById('maintenance-title')?.value?.trim();
+            const message = document.getElementById('maintenance-message')?.value?.trim();
+
+            maintenanceConfig = {
+                enabled: enabled === true,
+                title: title || maintenanceConfig.title,
+                message: message || maintenanceConfig.message
+            };
+
+            try {
+                const res = await fetch('/api/admin/site-config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ maintenance: maintenanceConfig })
+                });
+                if (res.ok) {
+                    alert('Cortina atualizada com sucesso!');
+                } else {
+                    alert('Não foi possível salvar a cortina.');
+                }
+            } catch (err) {
+                console.warn('Erro ao salvar config do site:', err);
+                alert('Erro ao salvar. Verifique sua conexão.');
+            }
+        }
+
+        function openPreview() {
+            window.open('/preview', '_blank');
+        }
+
+        function renderMaintenance() {
+            const m = maintenanceConfig;
+
+            const html = `
+                <div class="max-w-5xl mx-auto space-y-6">
+                    <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+                        <div class="flex items-start justify-between gap-4">
+                            <div>
+                                <h2 class="text-lg font-semibold text-gray-900">Cortina de Manutenção</h2>
+                                <p class="text-sm text-gray-500 mt-1">Quando ativa, o público verá a página de manutenção no endereço principal.</p>
+                            </div>
+                            <label class="inline-flex items-center gap-3 text-sm font-medium text-gray-700">
+                                <input id="maintenance-enabled" type="checkbox" class="w-4 h-4" ${m.enabled ? 'checked' : ''} onchange="maintenanceConfig.enabled = this.checked; saveSiteConfig();">
+                                Ativar manutenção
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6 space-y-4">
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 mb-1">Título</label>
+                            <input id="maintenance-title" type="text" value="${m.title}" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-neutral-900" oninput="maintenanceConfig.title = this.value; saveSiteConfig();">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 mb-1">Mensagem</label>
+                            <textarea id="maintenance-message" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-neutral-900" oninput="maintenanceConfig.message = this.value; saveSiteConfig();">${m.message}</textarea>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-3">
+                            <button onclick="saveSiteConfig()" class="bg-neutral-900 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-gray-800">
+                                Salvar cortina
+                            </button>
+                            <button onclick="openPreview()" class="px-4 py-2 border border-gray-300 rounded-lg text-sm font-semibold hover:bg-gray-50">
+                                Abrir preview (sem cortina)
+                            </button>
+                            <a href="/" target="_blank" class="px-4 py-2 border border-gray-300 rounded-lg text-sm font-semibold hover:bg-gray-50">Ver site público</a>
+                        </div>
+                        <p class="text-xs text-gray-500">O preview abre em /preview e sempre ignora a cortina. O público vê /.</p>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('content-area').innerHTML = html;
+            lucide.createIcons();
+        }
+
+        function renderFooter() {
+            const f = appData.footer || {};
+            const socials = f.socialMedia || {};
+            const quickLinks = f.quickLinks || [];
+            const newsletter = f.newsletter || { enabled: true, title: '', description: '' };
+            const copyright = f.copyright || '';
+
+            const html = `
+                <div class="max-w-5xl mx-auto space-y-6">
+                    <!-- REDES SOCIAIS -->
+                    <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+                        <h2 class="text-lg font-semibold text-gray-900 mb-4">Redes Sociais</h2>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-medium text-gray-600 mb-1">Instagram</label>
+                                <input id="footer-instagram" type="url" value="${socials.instagram || ''}" placeholder="https://instagram.com/seu_perfil" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-neutral-900">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-600 mb-1">Facebook</label>
+                                <input id="footer-facebook" type="url" value="${socials.facebook || ''}" placeholder="https://facebook.com/seu_perfil" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-neutral-900">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-600 mb-1">LinkedIn</label>
+                                <input id="footer-linkedin" type="url" value="${socials.linkedin || ''}" placeholder="https://linkedin.com/in/seu_perfil" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-neutral-900">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-600 mb-1">TikTok</label>
+                                <input id="footer-tiktok" type="url" value="${socials.tiktok || ''}" placeholder="https://tiktok.com/@seu_perfil" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-neutral-900">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-600 mb-1">YouTube</label>
+                                <input id="footer-youtube" type="url" value="${socials.youtube || ''}" placeholder="https://youtube.com/seu_canal" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-neutral-900">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-600 mb-1">Email</label>
+                                <input id="footer-email" type="email" value="${socials.email || ''}" placeholder="contato@seu_site.com" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-neutral-900">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- LINKS ÚTEIS -->
+                    <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+                        <h2 class="text-lg font-semibold text-gray-900 mb-4">Links Úteis</h2>
+                        <div id="quick-links-list" class="space-y-3 mb-4">
+                            ${quickLinks.map((link, idx) => `
+                                <div class="flex gap-2 items-end">
+                                    <div class="flex-1">
+                                        <label class="block text-xs font-medium text-gray-600 mb-1">Label</label>
+                                        <input type="text" class="quick-link-label w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-neutral-900" value="${link.label || ''}" data-index="${idx}">
+                                    </div>
+                                    <div class="flex-1">
+                                        <label class="block text-xs font-medium text-gray-600 mb-1">URL</label>
+                                        <input type="url" class="quick-link-url w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-neutral-900" value="${link.url || ''}" data-index="${idx}">
+                                    </div>
+                                    <button type="button" onclick="removeQuickLink(${idx})" class="px-3 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors">
+                                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                    </button>
+                                </div>
+                            `).join('')}
+                        </div>
+                        <button type="button" onclick="addQuickLink()" class="px-4 py-2 border border-gray-300 rounded-lg text-sm font-semibold hover:bg-gray-50">
+                            <i data-lucide="plus" class="w-4 h-4 inline mr-2"></i> Adicionar Link
+                        </button>
+                    </div>
+
+                    <!-- NEWSLETTER -->
+                    <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h2 class="text-lg font-semibold text-gray-900">Newsletter</h2>
+                            <label class="inline-flex items-center gap-3 text-sm font-medium text-gray-700">
+                                <input id="footer-newsletter-enabled" type="checkbox" class="w-4 h-4" ${newsletter.enabled ? 'checked' : ''}>
+                                Ativo
+                            </label>
+                        </div>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-xs font-medium text-gray-600 mb-1">Título</label>
+                                <input id="footer-newsletter-title" type="text" value="${newsletter.title || 'Receba Novidades'}" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-neutral-900">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-600 mb-1">Descrição</label>
+                                <textarea id="footer-newsletter-desc" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-neutral-900">${newsletter.description || 'Inscreva-se para atualizações e promoções exclusivas.'}</textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- COPYRIGHT -->
+                    <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+                        <h2 class="text-lg font-semibold text-gray-900 mb-4">Copyright</h2>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 mb-1">Texto do Rodapé</label>
+                            <textarea id="footer-copyright" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-neutral-900">${copyright}</textarea>
+                            <p class="text-xs text-gray-500 mt-1">Ex: © 2026 CLIQUE·ZOOM. Todos os direitos reservados.</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('content-area').innerHTML = html;
+            lucide.createIcons();
+        }
+
+        function addQuickLink() {
+            appData.footer.quickLinks.push({ label: '', url: '' });
+            renderFooter();
+        }
+
+        function removeQuickLink(index) {
+            appData.footer.quickLinks.splice(index, 1);
+            renderFooter();
+        }
+
+        async function renderNewsletter() {
+            const contentArea = document.getElementById('content-area');
+            
+            // Loading state
+            contentArea.innerHTML = '<div class="flex items-center justify-center h-64"><div class="text-gray-500">Carregando...</div></div>';
+            
+            try {
+                const response = await fetch('/api/newsletter');
+                const data = await response.json();
+                
+                const { subscribers = [], pagination = { total: 0 } } = data;
+                
+                const html = `
+                    <div class="max-w-6xl mx-auto space-y-6">
+                        <!-- Stats -->
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+                                <div class="flex items-center gap-4">
+                                    <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                                        <i data-lucide="users" class="w-6 h-6 text-blue-600"></i>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm text-gray-500">Total de Inscritos</p>
+                                        <p class="text-2xl font-bold text-gray-900">${pagination.total}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+                                <div class="flex items-center gap-4">
+                                    <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                                        <i data-lucide="check-circle" class="w-6 h-6 text-green-600"></i>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm text-gray-500">Ativos</p>
+                                        <p class="text-2xl font-bold text-gray-900">${subscribers.filter(s => s.active).length}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+                                <button onclick="exportNewsletterEmails()" class="w-full h-full flex items-center justify-center gap-3 hover:bg-gray-50 rounded-lg transition-colors">
+                                    <i data-lucide="download" class="w-5 h-5 text-gray-600"></i>
+                                    <span class="font-semibold text-gray-700">Exportar Emails</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Lista de Emails -->
+                        <div class="bg-white rounded-xl border border-gray-200 shadow-sm">
+                            <div class="p-6 border-b border-gray-200">
+                                <h2 class="text-lg font-semibold text-gray-900">Inscritos na Newsletter</h2>
+                                <p class="text-sm text-gray-500 mt-1">Lista de todos os emails cadastrados</p>
+                            </div>
+                            
+                            <div class="overflow-x-auto">
+                                <table class="w-full">
+                                    <thead class="bg-gray-50 border-b border-gray-200">
+                                        <tr>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data de Inscrição</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="bg-white divide-y divide-gray-200">
+                                        ${subscribers.length === 0 ? `
+                                            <tr>
+                                                <td colspan="4" class="px-6 py-12 text-center text-gray-500">
+                                                    <i data-lucide="inbox" class="w-12 h-12 mx-auto mb-3 text-gray-300"></i>
+                                                    <p>Nenhum inscrito ainda</p>
+                                                </td>
+                                            </tr>
+                                        ` : subscribers.map(sub => `
+                                            <tr class="hover:bg-gray-50">
+                                                <td class="px-6 py-4 whitespace-nowrap">
+                                                    <div class="flex items-center">
+                                                        <div class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center mr-3">
+                                                            <i data-lucide="mail" class="w-4 h-4 text-gray-600"></i>
+                                                        </div>
+                                                        <span class="text-sm font-medium text-gray-900">${sub.email}</span>
+                                                    </div>
+                                                </td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                    ${new Date(sub.subscribedAt).toLocaleDateString('pt-BR', { 
+                                                        day: '2-digit', 
+                                                        month: 'short', 
+                                                        year: 'numeric',
+                                                        hour: '2-digit',
+                                                        minute: '2-digit'
+                                                    })}
+                                                </td>
+                                                <td class="px-6 py-4 whitespace-nowrap">
+                                                    <span class="px-2 py-1 text-xs font-semibold rounded-full ${sub.active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}">
+                                                        ${sub.active ? 'Ativo' : 'Inativo'}
+                                                    </span>
+                                                </td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
+                                                    ${sub.active ? `
+                                                        <button onclick="unsubscribeEmail('${sub.email}')" class="text-red-600 hover:text-red-800 font-medium">
+                                                            Cancelar
+                                                        </button>
+                                                    ` : `
+                                                        <span class="text-gray-400">Cancelado</span>
+                                                    `}
+                                                </td>
+                                            </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+                            
+                            ${pagination.total > 0 ? `
+                                <div class="px-6 py-4 border-t border-gray-200 bg-gray-50 text-sm text-gray-500">
+                                    Total: ${pagination.total} inscrito(s)
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+                
+                contentArea.innerHTML = html;
+                lucide.createIcons();
+            } catch (error) {
+                console.error('Erro ao carregar newsletter:', error);
+                contentArea.innerHTML = `
+                    <div class="max-w-4xl mx-auto">
+                        <div class="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
+                            <i data-lucide="alert-circle" class="w-12 h-12 mx-auto mb-3 text-red-500"></i>
+                            <p class="text-red-800 font-medium">Erro ao carregar dados da newsletter</p>
+                            <p class="text-red-600 text-sm mt-2">${error.message}</p>
+                        </div>
+                    </div>
+                `;
+                lucide.createIcons();
+            }
+        }
+
+        async function unsubscribeEmail(email) {
+            if (!confirm(`Tem certeza que deseja cancelar a inscrição de ${email}?`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/newsletter/${encodeURIComponent(email)}`, {
+                    method: 'DELETE'
+                });
+                
+                if (response.ok) {
+                    alert('Inscrição cancelada com sucesso!');
+                    renderNewsletter(); // Recarregar lista
+                } else {
+                    throw new Error('Erro ao cancelar inscrição');
+                }
+            } catch (error) {
+                console.error('Erro:', error);
+                alert('Não foi possível cancelar a inscrição');
+            }
+        }
+
+        function exportNewsletterEmails() {
+            fetch('/api/newsletter')
+                .then(res => res.json())
+                .then(data => {
+                    const emails = data.subscribers
+                        .filter(s => s.active)
+                        .map(s => s.email)
+                        .join('\n');
+                    
+                    // Criar arquivo para download
+                    const blob = new Blob([emails], { type: 'text/plain' });
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `newsletter-emails-${new Date().toISOString().split('T')[0]}.txt`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(url);
+                    
+                    alert(`${data.subscribers.filter(s => s.active).length} emails exportados!`);
+                })
+                .catch(error => {
+                    console.error('Erro ao exportar:', error);
+                    alert('Erro ao exportar emails');
+                });
+        }
+
+        async function renderFAQ() {
+            const contentArea = document.getElementById('content-area');
+            
+            try {
+                const response = await fetch('/api/faq');
+                const data = await response.json();
+                const faqs = data.faqs || [];
+                
+                const html = `
+                    <div class="max-w-6xl mx-auto space-y-6">
+                        <!-- Header -->
+                        <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+                            <div class="flex items-center justify-between mb-4">
+                                <div>
+                                    <h2 class="text-lg font-semibold text-gray-900">Perguntas Frequentes (FAQ)</h2>
+                                    <p class="text-sm text-gray-500 mt-1">Gerencie as perguntas que aparecem no site</p>
+                                </div>
+                                <button onclick="addFAQ()" class="flex items-center gap-2 px-4 py-2 bg-neutral-900 text-white rounded-lg hover:bg-neutral-800 transition-colors">
+                                    <i data-lucide="plus" class="w-4 h-4"></i>
+                                    Adicionar FAQ
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- FAQs List -->
+                        <div id="faq-list" class="space-y-4">
+                            ${faqs.length === 0 ? `
+                                <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-12 text-center">
+                                    <i data-lucide="help-circle" class="w-16 h-16 mx-auto mb-4 text-gray-300"></i>
+                                    <p class="text-gray-500">Nenhuma FAQ cadastrada ainda</p>
+                                    <button onclick="addFAQ()" class="mt-4 text-neutral-900 hover:underline font-medium">
+                                        Adicionar primeira FAQ
+                                    </button>
+                                </div>
+                            ` : faqs.map((faq, idx) => `
+                                <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+                                    <div class="space-y-4">
+                                        <div>
+                                            <label class="block text-xs font-medium text-gray-600 mb-2">Pergunta</label>
+                                            <input 
+                                                type="text" 
+                                                value="${faq.question}" 
+                                                onchange="updateFAQ(${idx}, 'question', this.value)"
+                                                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-neutral-900"
+                                                placeholder="Digite a pergunta"
+                                            >
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-medium text-gray-600 mb-2">Resposta</label>
+                                            <textarea 
+                                                rows="4" 
+                                                onchange="updateFAQ(${idx}, 'answer', this.value)"
+                                                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-neutral-900"
+                                                placeholder="Digite a resposta"
+                                            >${faq.answer}</textarea>
+                                            <p class="text-xs text-gray-500 mt-1">Você pode usar **negrito** e quebras de linha</p>
+                                        </div>
+                                        <div class="flex justify-end gap-2">
+                                            <button onclick="moveFAQ(${idx}, 'up')" ${idx === 0 ? 'disabled' : ''} class="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                                                <i data-lucide="arrow-up" class="w-4 h-4"></i>
+                                            </button>
+                                            <button onclick="moveFAQ(${idx}, 'down')" ${idx === faqs.length - 1 ? 'disabled' : ''} class="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                                                <i data-lucide="arrow-down" class="w-4 h-4"></i>
+                                            </button>
+                                            <button onclick="deleteFAQ(${idx})" class="px-3 py-1.5 text-sm text-red-600 hover:text-red-800 border border-red-300 rounded-lg hover:bg-red-50 transition-colors">
+                                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+                
+                contentArea.innerHTML = html;
+                lucide.createIcons();
+            } catch (error) {
+                console.error('Erro ao carregar FAQ:', error);
+                contentArea.innerHTML = `
+                    <div class="max-w-4xl mx-auto">
+                        <div class="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
+                            <i data-lucide="alert-circle" class="w-12 h-12 mx-auto mb-3 text-red-500"></i>
+                            <p class="text-red-800 font-medium">Erro ao carregar FAQs</p>
+                        </div>
+                    </div>
+                `;
+                lucide.createIcons();
+            }
+        }
+
+        async function addFAQ() {
+            try {
+                const response = await fetch('/api/faq', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        question: 'Nova Pergunta',
+                        answer: 'Digite a resposta aqui'
+                    })
+                });
+                
+                if (response.ok) {
+                    renderFAQ();
+                }
+            } catch (error) {
+                console.error('Erro ao adicionar FAQ:', error);
+                alert('Erro ao adicionar FAQ');
+            }
+        }
+
+        async function updateFAQ(index, field, value) {
+            try {
+                const response = await fetch(`/api/faq/${index}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ [field]: value })
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Erro ao atualizar FAQ');
+                }
+            } catch (error) {
+                console.error('Erro ao atualizar FAQ:', error);
+                alert('Erro ao atualizar FAQ');
+            }
+        }
+
+        async function deleteFAQ(index) {
+            if (!confirm('Tem certeza que deseja remover esta FAQ?')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/faq/${index}`, {
+                    method: 'DELETE'
+                });
+                
+                if (response.ok) {
+                    renderFAQ();
+                }
+            } catch (error) {
+                console.error('Erro ao deletar FAQ:', error);
+                alert('Erro ao deletar FAQ');
+            }
+        }
+
+        async function moveFAQ(index, direction) {
+            try {
+                const response = await fetch(`/api/faq/${index}/move`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ direction })
+                });
+                
+                if (response.ok) {
+                    renderFAQ();
+                }
+            } catch (error) {
+                console.error('Erro ao mover FAQ:', error);
+                alert('Erro ao mover FAQ');
+            }
+        }
+
+        function renderFooter() {
+            const footer = appData.footer || {
+                socialMedia: { instagram: '', facebook: '', linkedin: '', tiktok: '', youtube: '', email: '' },
+                quickLinks: [],
+                newsletter: { enabled: true, title: '', description: '' },
+                copyright: ''
+            };
+
+            let quickLinksHTML = '';
+            if (footer.quickLinks && footer.quickLinks.length > 0) {
+                quickLinksHTML = footer.quickLinks.map((link, idx) => `
+                    <div class="border border-gray-200 rounded-lg p-4 flex justify-between items-start gap-4">
+                        <div class="flex-1 space-y-2">
+                            <input type="text" value="${link.label || ''}" class="w-full px-2 py-1 border border-gray-300 rounded text-sm" placeholder="Rótulo do link" onchange="appData.footer.quickLinks[${idx}].label = this.value; saveDados();">
+                            <input type="text" value="${link.url || ''}" class="w-full px-2 py-1 border border-gray-300 rounded text-sm" placeholder="URL" onchange="appData.footer.quickLinks[${idx}].url = this.value; saveDados();">
+                        </div>
+                        <button onclick="appData.footer.quickLinks.splice(${idx}, 1); renderFooter(); saveDados();" class="text-red-500 hover:text-red-700 p-1">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                `).join('');
+            }
+
+            const html = `
+                <div class="max-w-5xl mx-auto space-y-6">
+                    <!-- REDES SOCIAIS -->
+                    <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+                        <h2 class="text-lg font-semibold text-gray-900 mb-4">📱 Redes Sociais</h2>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-medium text-gray-600 mb-1">Instagram</label>
+                                <input type="text" value="${footer.socialMedia?.instagram || ''}" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" placeholder="https://instagram.com/..." onchange="appData.footer.socialMedia.instagram = this.value; saveDados();">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-600 mb-1">Facebook</label>
+                                <input type="text" value="${footer.socialMedia?.facebook || ''}" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" placeholder="https://facebook.com/..." onchange="appData.footer.socialMedia.facebook = this.value; saveDados();">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-600 mb-1">LinkedIn</label>
+                                <input type="text" value="${footer.socialMedia?.linkedin || ''}" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" placeholder="https://linkedin.com/in/..." onchange="appData.footer.socialMedia.linkedin = this.value; saveDados();">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-600 mb-1">TikTok</label>
+                                <input type="text" value="${footer.socialMedia?.tiktok || ''}" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" placeholder="https://tiktok.com/@..." onchange="appData.footer.socialMedia.tiktok = this.value; saveDados();">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-600 mb-1">YouTube</label>
+                                <input type="text" value="${footer.socialMedia?.youtube || ''}" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" placeholder="https://youtube.com/@..." onchange="appData.footer.socialMedia.youtube = this.value; saveDados();">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-600 mb-1">Email de Contato</label>
+                                <input type="email" value="${footer.socialMedia?.email || ''}" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" placeholder="contato@estudio.com" onchange="appData.footer.socialMedia.email = this.value; saveDados();">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- LINKS ÚTEIS -->
+                    <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h2 class="text-lg font-semibold text-gray-900">🔗 Links Úteis</h2>
+                            <button onclick="appData.footer.quickLinks = appData.footer.quickLinks || []; appData.footer.quickLinks.push({label: '', url: ''}); renderFooter(); saveDados();" class="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600">
+                                + Adicionar Link
+                            </button>
+                        </div>
+                        <div class="space-y-3" id="quick-links-container">
+                            ${quickLinksHTML || '<p class="text-gray-500 text-sm">Nenhum link adicionado ainda</p>'}
+                        </div>
+                    </div>
+
+                    <!-- NEWSLETTER -->
+                    <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+                        <h2 class="text-lg font-semibold text-gray-900 mb-4">📧 Newsletter</h2>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="flex items-center gap-3 text-sm font-medium text-gray-700">
+                                    <input type="checkbox" class="w-4 h-4" ${footer.newsletter?.enabled ? 'checked' : ''} onchange="appData.footer.newsletter.enabled = this.checked; saveDados();">
+                                    Ativar newsletter
+                                </label>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-600 mb-1">Título</label>
+                                <input type="text" value="${footer.newsletter?.title || 'Receba Novidades'}" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" onchange="appData.footer.newsletter.title = this.value; saveDados();" placeholder="Ex: Receba Novidades">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-600 mb-1">Descrição</label>
+                                <textarea rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" onchange="appData.footer.newsletter.description = this.value; saveDados();" placeholder="Descrição da newsletter">${footer.newsletter?.description || 'Inscreva-se para atualizações e promoções exclusivas.'}</textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- COPYRIGHT -->
+                    <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+                        <h2 class="text-lg font-semibold text-gray-900 mb-4">© Copyright</h2>
+                        <textarea rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" onchange="appData.footer.copyright = this.value; saveDados();" placeholder="© 2026 Seu Estúdio. Todos os direitos reservados.">${footer.copyright || ''}</textarea>
+                    </div>
+
+                    <!-- BOTÃO SALVAR -->
+                    <div class="flex gap-3">
+                        <button onclick="saveDados()" class="bg-neutral-900 text-white px-6 py-2 rounded-lg font-semibold hover:bg-gray-800 flex items-center gap-2">
+                            <i data-lucide="save" class="w-4 h-4"></i> Salvar Rodapé
+                        </button>
+                        <a href="/public/" target="_blank" class="px-6 py-2 border border-gray-300 rounded-lg font-semibold hover:bg-gray-50 flex items-center gap-2">
+                            <i data-lucide="external-link" class="w-4 h-4"></i> Ver site
+                        </a>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('content-area').innerHTML = html;
+            lucide.createIcons();
+        }
+
+        function updatePreview() {
+            // Ler valores dos controles
+            const scale = parseFloat(document.getElementById('hero-scale')?.value || 1);
+            const imgX = parseInt(document.getElementById('hero-img-x')?.value || 50);
+            const imgY = parseInt(document.getElementById('hero-img-y')?.value || 50);
+            const titleX = parseInt(document.getElementById('hero-title-x')?.value || 50);
+            const titleY = parseInt(document.getElementById('hero-title-y')?.value || 40);
+            const titleSize = parseInt(document.getElementById('hero-title-size')?.value || 48);
+            const subX = parseInt(document.getElementById('hero-sub-x')?.value || 50);
+            const subY = parseInt(document.getElementById('hero-sub-y')?.value || 55);
+            const subSize = parseInt(document.getElementById('hero-sub-size')?.value || 18);
+            const topBar = parseInt(document.getElementById('hero-top-bar')?.value || 0);
+            const botBar = parseInt(document.getElementById('hero-bot-bar')?.value || 0);
+            const overlay = parseInt(document.getElementById('hero-overlay')?.value || 30);
+            
+            // Ler textos e imagem
+            const title = document.getElementById('hero-title')?.value || '';
+            const subtitle = document.getElementById('hero-subtitle')?.value || '';
+            const image = document.getElementById('hero-image')?.value || '';
+
+            // Atualizar labels
+            document.getElementById('val-scale').textContent = scale;
+            document.getElementById('val-imgX').textContent = imgX;
+            document.getElementById('val-imgY').textContent = imgY;
+            document.getElementById('val-titleX').textContent = titleX;
+            document.getElementById('val-titleY').textContent = titleY;
+            document.getElementById('val-titleSize').textContent = titleSize;
+            document.getElementById('val-subX').textContent = subX;
+            document.getElementById('val-subY').textContent = subY;
+            document.getElementById('val-subSize').textContent = subSize;
+            document.getElementById('val-topBar').textContent = topBar;
+            document.getElementById('val-botBar').textContent = botBar;
+            document.getElementById('val-overlay').textContent = overlay;
+
+            // Atualizar preview
+            const previewImg = document.getElementById('preview-img');
+            const previewTitle = document.getElementById('preview-title');
+            const previewSubtitle = document.getElementById('preview-subtitle');
+            const previewOverlay = document.getElementById('preview-overlay');
+            const previewTopBar = document.getElementById('preview-top-bar');
+            const previewBotBar = document.getElementById('preview-bot-bar');
+
+            if (previewImg) {
+                previewImg.src = resolveImagePath(image);
+                previewImg.style.transform = `scale(${scale})`;
+                previewImg.style.transformOrigin = `${imgX}% ${imgY}%`;
+            }
+
+            if (previewTitle) {
+                previewTitle.textContent = title;
+                previewTitle.style.left = titleX + '%';
+                previewTitle.style.top = titleY + '%';
+                previewTitle.style.transform = 'translate(-50%, -50%)';
+                previewTitle.style.fontSize = (titleSize * 0.4) + 'px';
+            }
+
+            if (previewSubtitle) {
+                previewSubtitle.textContent = subtitle;
+                previewSubtitle.style.left = subX + '%';
+                previewSubtitle.style.top = subY + '%';
+                previewSubtitle.style.transform = 'translate(-50%, -50%)';
+                previewSubtitle.style.fontSize = (subSize * 0.4) + 'px';
+            }
+
+            if (previewOverlay) {
+                previewOverlay.style.background = `rgba(0,0,0,${overlay/100})`;
+            }
+
+            if (previewTopBar) {
+                previewTopBar.style.height = topBar + '%';
+            }
+
+            if (previewBotBar) {
+                previewBotBar.style.height = botBar + '%';
+            }
+
+            // Salvar no appData
+            appData.hero = {
+                ...appData.hero,
+                title, subtitle, image,
+                imageScale: scale,
+                imagePosX: imgX,
+                imagePosY: imgY,
+                titlePosX: titleX,
+                titlePosY: titleY,
+                titleSize: titleSize,
+                subtitlePosX: subX,
+                subtitlePosY: subY,
+                subtitleSize: subSize,
+                topBarHeight: topBar,
+                bottomBarHeight: botBar,
+                overlayOpacity: overlay
+            };
+
+        }
+
+        // Comprime a imagem no navegador antes de enviar (max 4MB, qualidade 0.8)
+        async function compressImage(file, maxSizeMB = 4, maxWidth = 2400, quality = 0.85) {
+            return new Promise((resolve) => {
+                // Se já for pequena o suficiente, retorna original
+                if (file.size <= maxSizeMB * 1024 * 1024) {
+                    return resolve(file);
+                }
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        let width = img.width;
+                        let height = img.height;
+
+                        // Redimensiona se maior que maxWidth
+                        if (width > maxWidth) {
+                            height = Math.round((height * maxWidth) / width);
+                            width = maxWidth;
+                        }
+
+                        canvas.width = width;
+                        canvas.height = height;
+
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+
+                        canvas.toBlob((blob) => {
+                            if (blob) {
+                                const compressedFile = new File([blob], file.name, {
+                                    type: 'image/jpeg',
+                                    lastModified: Date.now()
+                                });
+                                console.log(`Imagem comprimida: ${(file.size/1024/1024).toFixed(2)}MB → ${(compressedFile.size/1024/1024).toFixed(2)}MB`);
+                                resolve(compressedFile);
+                            } else {
+                                resolve(file);
+                            }
+                        }, 'image/jpeg', quality);
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function showUploadProgress(percent, text = 'Fazendo upload...') {
+            const container = document.getElementById('upload-progress-container');
+            const bar = document.getElementById('upload-progress-bar');
+            const percentText = document.getElementById('upload-progress-percent');
+            const progressText = document.getElementById('upload-progress-text');
+            
+            container.classList.add('active');
+            bar.style.width = percent + '%';
+            percentText.textContent = Math.round(percent) + '%';
+            progressText.textContent = text;
+            
+            if (percent >= 100) {
+                setTimeout(() => {
+                    container.classList.remove('active');
+                }, 1000);
+            }
+        }
+
+        async function uploadImage(file) {
+            if (!file) return { ok: false, error: 'Nenhum arquivo selecionado.' };
+            const allowed = ['image/jpeg', 'image/png'];
+            if (!allowed.includes(file.type)) {
+                return { ok: false, error: 'Apenas imagens JPG ou PNG são permitidas.' };
+            }
+
+            showUploadProgress(0, 'Preparando imagem...');
+
+            // Comprime a imagem antes de enviar
+            const compressedFile = await compressImage(file);
+            
+            showUploadProgress(30, 'Enviando para servidor...');
+
+            const formData = new FormData();
+            formData.append('image', compressedFile);
+
+            try {
+                const xhr = new XMLHttpRequest();
+                
+                return new Promise((resolve, reject) => {
+                    xhr.upload.addEventListener('progress', (e) => {
+                        if (e.lengthComputable) {
+                            const percent = 30 + (e.loaded / e.total) * 60;
+                            showUploadProgress(percent, 'Fazendo upload...');
+                        }
+                    });
+                    
+                    xhr.addEventListener('load', () => {
+                        if (xhr.status >= 200 && xhr.status < 300) {
+                            showUploadProgress(90, 'Processando...');
+                            const data = JSON.parse(xhr.responseText);
+                            
+                            if (!data.url) {
+                                reject({ ok: false, error: 'Resposta inválida do servidor.' });
+                                return;
+                            }
+                            
+                            showUploadProgress(100, 'Concluído!');
+                            setTimeout(() => resolve({ ok: true, data }), 500);
+                        } else {
+                            const data = JSON.parse(xhr.responseText || '{}');
+                            reject({ ok: false, error: data.error || 'Falha no upload.' });
+                        }
+                    });
+                    
+                    xhr.addEventListener('error', () => {
+                        reject({ ok: false, error: 'Erro ao fazer upload. Verifique o servidor.' });
+                    });
+                    
+                    xhr.open('POST', '/api/admin/upload');
+                    xhr.setRequestHeader('Authorization', `Bearer ${authToken}`);
+                    xhr.send(formData);
+                });
+            } catch (err) {
+                document.getElementById('upload-progress-container').classList.remove('active');
+                return { ok: false, error: 'Erro ao fazer upload. Verifique o servidor.' };
+            }
+        }
+
+        async function handleHeroUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const result = await uploadImage(file);
+            if (!result.ok) {
+                alert(result.error);
+                return;
+            }
+
+            document.getElementById('hero-image').value = result.data.url;
+                appData.hero.image = result.data.url;
+            updatePreview();
+                saveDados();
+            alert('Upload concluído!');
+        }
+
+        function renderSobre() {
+            const a = appData.about;
+            const html = `
+                <div class="max-w-4xl mx-auto">
+                    <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm space-y-6">
+                        <div class="control-group">
+                            <div class="control-group-title">
+                                <i data-lucide="type" class="w-4 h-4"></i> Conteúdo
+                            </div>
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Título da Seção</label>
+                                    <input type="text" id="about-title" value="${a.title}"
+                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-neutral-900"
+                                        oninput="appData.about.title = this.value; saveDados();">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Texto (separe parágrafos com linha em branco)</label>
+                                    <textarea id="about-text" rows="8"
+                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-neutral-900"
+                                        oninput="appData.about.text = this.value; saveDados();">${a.text}</textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <div class="control-group-title">
+                                <i data-lucide="image" class="w-4 h-4"></i> Imagem
+                            </div>
+                            <div class="flex gap-4 items-start">
+                                <div class="flex-1">
+                                    <input type="text" id="about-image" value="${a.image}"
+                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-neutral-900 mb-2"
+                                        oninput="appData.about.image = this.value; document.getElementById('about-preview').src = resolveImagePath(this.value); saveDados();">
+                                    <label class="inline-block px-4 py-2 bg-neutral-900 text-white rounded-lg text-sm font-medium cursor-pointer hover:bg-gray-800">
+                                        Fazer Upload
+                                        <input type="file" accept=".jpg,.jpeg,.png" class="hidden" onchange="handleAboutUpload(event)">
+                                    </label>
+                                </div>
+                                <div class="w-32 h-32 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0">
+                                    <img id="about-preview" src="${resolveImagePath(a.image)}" class="w-full h-full object-cover">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.getElementById('content-area').innerHTML = html;
+            lucide.createIcons();
+        }
+
+        async function handleAboutUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const result = await uploadImage(file);
+            if (!result.ok) {
+                alert(result.error);
+                return;
+            }
+
+            document.getElementById('about-image').value = result.data.url;
+            document.getElementById('about-preview').src = resolveImagePath(result.data.url);
+            appData.about.image = result.data.url;
+            saveDados();
+            alert('Upload concluído!');
+        }
+
+        let draggedItem = null;
+        let draggedIndex = null;
+
+        let editingPhotoIndex = null;
+
+        function renderPortfolio() {
+            const html = `
+                <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                    <div class="flex justify-between items-center mb-6">
+                        <div>
+                            <h2 class="text-lg font-semibold text-gray-900">Fotos da Galeria</h2>
+                            <p class="text-sm text-gray-500">Arraste para reordenar, clique na foto para ajustar posição</p>
+                        </div>
+                        <label class="bg-neutral-900 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-gray-800 flex items-center gap-2 cursor-pointer">
+                            <i data-lucide="upload" class="w-4 h-4"></i> Upload de Fotos
+                            <input type="file" accept=".jpg,.jpeg,.png" multiple class="hidden" onchange="handlePortfolioUpload(event)">
+                        </label>
+                    </div>
+
+                    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3" id="portfolio-grid">
+                        ${appData.portfolio.map((p, idx) => {
+                            const posX = p.posX ?? 50;
+                            const posY = p.posY ?? 50;
+                            const scale = p.scale ?? 1;
+                            const ratio = p.ratio ?? '3/4';
+                            const aspectMap = { '16/9': 'aspect-video', '3/4': 'aspect-[3/4]', '1/1': 'aspect-square' };
+                            const aspectClass = aspectMap[ratio] || 'aspect-[3/4]';
+                            return `
+                            <div class="portfolio-item relative group ${aspectClass} bg-gray-100 rounded-lg overflow-hidden border-2 border-transparent hover:border-neutral-900 transition-all cursor-move"
+                                draggable="true"
+                                data-index="${idx}"
+                                ondragstart="handleDragStart(event, ${idx})"
+                                ondragover="handleDragOver(event)"
+                                ondrop="handleDrop(event, ${idx})"
+                                ondragend="handleDragEnd(event)">
+                                <img src="${resolveImagePath(p.image)}" alt="Portfolio ${idx+1}"
+                                    class="w-full h-full object-cover pointer-events-none transition-all"
+                                    style="object-position: ${posX}% ${posY}%; transform: scale(${scale});">
+                                <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                                    <button onclick="event.stopPropagation(); openPhotoEditor(${idx})" class="bg-blue-500 text-white p-2 rounded-full hover:bg-blue-600" title="Ajustar posição">
+                                        <i data-lucide="move" class="w-4 h-4"></i>
+                                    </button>
+                                    <button onclick="event.stopPropagation(); deletePortfolioImage(${idx})" class="bg-red-500 text-white p-2 rounded-full hover:bg-red-600" title="Remover">
+                                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                    </button>
+                                </div>
+                                <div class="absolute bottom-2 left-2 bg-black/70 text-white text-xs px-2 py-1 rounded font-medium">
+                                    ${idx + 1}
+                                </div>
+                                <div class="absolute top-2 right-2 bg-black/70 text-white p-1 rounded opacity-0 group-hover:opacity-100">
+                                    <i data-lucide="grip-vertical" class="w-4 h-4"></i>
+                                </div>
+                            </div>
+                        `}).join('')}
+                    </div>
+
+                    <div class="mt-4 p-4 bg-gray-50 rounded-lg border border-dashed border-gray-300 text-center"
+                        ondragover="event.preventDefault(); this.classList.add('border-neutral-900', 'bg-gray-100')"
+                        ondragleave="this.classList.remove('border-neutral-900', 'bg-gray-100')"
+                        ondrop="handleDropUpload(event)">
+                        <p class="text-sm text-gray-500">Arraste imagens aqui para adicionar ou use o botão de upload</p>
+                    </div>
+                </div>
+
+                <!-- Modal Editor Pro de Foto -->
+                <div id="photo-editor-modal" class="fixed inset-0 bg-black/90 z-50 hidden flex flex-col overflow-hidden">
+                    <!-- Header -->
+                    <header class="bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center flex-shrink-0">
+                        <div class="flex items-center gap-4">
+                            <div class="bg-neutral-900 text-white p-2 rounded-lg">
+                                <i data-lucide="camera" class="w-5 h-5"></i>
+                            </div>
+                            <div>
+                                <h1 class="text-lg font-bold text-gray-900">Editor de Enquadramento</h1>
+                                <p class="text-xs text-gray-500 uppercase tracking-widest">Portfolio Pro Tools</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <button onclick="closePhotoEditor()" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg text-sm font-medium transition-all">
+                                Cancelar
+                            </button>
+                            <button onclick="savePhotoPosition()" class="bg-neutral-900 text-white px-6 py-2 rounded-lg text-sm font-semibold hover:bg-neutral-800 transition-all flex items-center gap-2">
+                                <i data-lucide="check" class="w-4 h-4"></i> Aplicar
+                            </button>
+                        </div>
+                    </header>
+
+                    <div class="flex-1 flex overflow-hidden">
+                        <!-- Sidebar Controls -->
+                        <aside class="w-72 bg-white border-r border-gray-200 overflow-y-auto p-6 space-y-6">
+                            
+                            <!-- Zoom Control -->
+                            <section>
+                                <div class="flex justify-between items-center mb-3">
+                                    <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider">Escala (Zoom)</h3>
+                                    <span id="zoom-val" class="text-sm font-mono font-bold bg-gray-100 px-2 py-1 rounded text-neutral-900">1.00x</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <button onclick="proEditorAdjustZoom(-0.1)" class="p-2 hover:bg-gray-100 rounded-lg text-gray-400 transition-colors">
+                                        <i data-lucide="minus" class="w-4 h-4"></i>
+                                    </button>
+                                    <input type="range" id="pro-zoom-slider" min="1" max="2" step="0.05" value="1" class="flex-1" oninput="proEditorUpdate()">
+                                    <button onclick="proEditorAdjustZoom(0.1)" class="p-2 hover:bg-gray-100 rounded-lg text-gray-400 transition-colors">
+                                        <i data-lucide="plus" class="w-4 h-4"></i>
+                                    </button>
+                                </div>
+                            </section>
+
+                            <!-- Position Control -->
+                            <section>
+                                <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">Posição (%)</h3>
+                                <div class="space-y-4">
+                                    <div>
+                                        <div class="flex justify-between text-xs mb-2">
+                                            <span class="text-gray-500">Eixo Horizontal (X)</span>
+                                            <span id="x-val" class="font-mono font-bold">50%</span>
+                                        </div>
+                                        <input type="range" id="pro-pos-x-slider" min="0" max="100" value="50" class="w-full" oninput="proEditorUpdate()">
+                                    </div>
+                                    <div>
+                                        <div class="flex justify-between text-xs mb-2">
+                                            <span class="text-gray-500">Eixo Vertical (Y)</span>
+                                            <span id="y-val" class="font-mono font-bold">50%</span>
+                                        </div>
+                                        <input type="range" id="pro-pos-y-slider" min="0" max="100" value="50" class="w-full" oninput="proEditorUpdate()">
+                                    </div>
+                                </div>
+                            </section>
+
+                            <!-- Aspect Ratio Presets -->
+                            <section>
+                                <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Formato do Recorte</h3>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <button onclick="proEditorSetRatio('16/9')" class="pro-ratio-btn active flex flex-col items-center gap-2 p-3 border-2 border-neutral-900 rounded-lg bg-neutral-50 transition-all" data-ratio="16/9">
+                                        <div class="w-10 h-6 border-2 border-neutral-900 rounded bg-white"></div>
+                                        <span class="text-[10px] font-bold text-neutral-900">HERO (16:9)</span>
+                                    </button>
+                                    <button onclick="proEditorSetRatio('3/4')" class="pro-ratio-btn flex flex-col items-center gap-2 p-3 border-2 border-gray-200 rounded-lg hover:bg-gray-50 transition-all" data-ratio="3/4">
+                                        <div class="w-6 h-8 border-2 border-gray-300 rounded bg-white"></div>
+                                        <span class="text-[10px] font-bold text-gray-500">PORTFÓLIO (3:4)</span>
+                                    </button>
+                                    <button onclick="proEditorSetRatio('1/1')" class="pro-ratio-btn flex flex-col items-center gap-2 p-3 border-2 border-gray-200 rounded-lg hover:bg-gray-50 transition-all" data-ratio="1/1">
+                                        <div class="w-8 h-8 border-2 border-gray-300 rounded bg-white"></div>
+                                        <span class="text-[10px] font-bold text-gray-500">SQUARE (1:1)</span>
+                                    </button>
+                                    <button onclick="proEditorReset()" class="flex flex-col items-center justify-center gap-2 p-3 border-2 border-gray-200 rounded-lg hover:bg-red-50 text-red-500 transition-all">
+                                        <i data-lucide="rotate-ccw" class="w-5 h-5"></i>
+                                        <span class="text-[10px] font-bold">RESETAR</span>
+                                    </button>
+                                </div>
+                            </section>
+
+                            <!-- Aspect Ratio Presets -->
+                            <section class="pt-4 border-t border-gray-100">
+                                <h4 class="text-xs font-bold text-gray-700 mb-3">FORMATO DO RECORTE</h4>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <button onclick="proEditorSetRatio('16/9')" class="pro-ratio-btn flex flex-col items-center gap-1 p-2 border-2 border-gray-300 rounded-lg bg-white hover:bg-gray-50 transition-all">
+                                        <div class="w-8 h-5 border-2 border-gray-400 rounded bg-gray-100"></div>
+                                        <span class="text-[8px] font-bold text-gray-600">HERO</span>
+                                        <span class="text-[7px] text-gray-500">16:9</span>
+                                    </button>
+                                    <button onclick="proEditorSetRatio('3/4')" class="pro-ratio-btn flex flex-col items-center gap-1 p-2 border-2 border-neutral-900 rounded-lg bg-neutral-50 hover:bg-neutral-100 transition-all" data-active="true">
+                                        <div class="w-5 h-7 border-2 border-neutral-900 rounded bg-white"></div>
+                                        <span class="text-[8px] font-bold text-neutral-900">PORTFÓLIO</span>
+                                        <span class="text-[7px] text-neutral-700">3:4</span>
+                                    </button>
+                                    <button onclick="proEditorSetRatio('1/1')" class="pro-ratio-btn flex flex-col items-center gap-1 p-2 border-2 border-gray-300 rounded-lg bg-white hover:bg-gray-50 transition-all">
+                                        <div class="w-6 h-6 border-2 border-gray-400 rounded bg-gray-100"></div>
+                                        <span class="text-[8px] font-bold text-gray-600">SQUARE</span>
+                                        <span class="text-[7px] text-gray-500">1:1</span>
+                                    </button>
+                                    <button onclick="proEditorResetToDefault()" class="pro-ratio-btn flex flex-col items-center gap-1 p-2 border-2 border-gray-300 rounded-lg bg-white hover:bg-gray-50 transition-all">
+                                        <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                                        </svg>
+                                        <span class="text-[8px] font-bold text-gray-600">RESETAR</span>
+                                    </button>
+                                </div>
+                            </section>
+
+                            <!-- Rule of Thirds Toggle -->
+                            <section class="pt-4 border-t border-gray-100">
+                                <label class="flex items-center justify-between cursor-pointer group">
+                                    <span class="text-xs font-bold text-gray-700">Regra dos Terços</span>
+                                    <input type="checkbox" id="grid-toggle" checked onchange="proEditorUpdate()" class="w-4 h-4 accent-neutral-900">
+                                </label>
+                            </section>
+
+                            <!-- Helper -->
+                            <div class="bg-blue-50 p-4 rounded-lg text-xs text-blue-800 border border-blue-100">
+                                <p><strong>Dica:</strong> Arraste na imagem para ajustar. Use scroll para zoom rápido.</p>
+                            </div>
+
+                            <!-- Reset Button -->
+                            <button onclick="proEditorReset()" class="w-full px-4 py-2 border-2 border-gray-200 text-gray-600 hover:bg-gray-50 rounded-lg text-sm font-semibold transition-all flex items-center justify-center gap-2">
+                                <i data-lucide="rotate-ccw" class="w-4 h-4"></i> Resetar
+                            </button>
+                        </aside>
+
+                        <!-- Canvas Area -->
+                        <main class="flex-1 bg-neutral-900 flex items-center justify-center p-8 relative overflow-hidden">
+                            <div id="pro-canvas-area" class="relative bg-black shadow-2xl overflow-hidden transition-all duration-300" 
+                                style="width: 100%; max-width: 600px; aspect-ratio: 3/4;">
+                                
+                                <img id="pro-editor-img" src="" alt="Editing"
+                                    class="absolute w-full h-full object-cover select-none pointer-events-none transition-none">
+
+                                <div id="pro-interaction-layer" class="absolute inset-0 editor-container z-20"></div>
+
+                                <div id="pro-rule-of-thirds" class="absolute inset-0 grid-thirds z-10 transition-opacity duration-300">
+                                    <div></div><div></div><div></div>
+                                    <div></div><div></div><div></div>
+                                    <div></div><div></div><div></div>
+                                </div>
+
+                                <div class="absolute bottom-4 left-4 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/10 text-white font-mono text-[10px] z-30 pointer-events-none">
+                                    X: <span id="pro-hud-x">50</span>% | Y: <span id="pro-hud-y">50</span>% | Z: <span id="pro-hud-z">1.00</span>x
+                                </div>
+                            </div>
+                        </main>
+                    </div>
+                </div>
+            `;
+            document.getElementById('content-area').innerHTML = html;
+            lucide.createIcons();
+            proEditorSetupEvents();
+        }
+
+        let proEditorState = {
+            zoom: 1.0,
+            posX: 50,
+            posY: 50,
+            ratio: '3/4',
+            isDragging: false,
+            startX: 0,
+            startY: 0
+        };
+
+        function openPhotoEditor(idx) {
+            editingPhotoIndex = idx;
+            const photo = appData.portfolio[idx];
+            const modal = document.getElementById('photo-editor-modal');
+            const img = document.getElementById('pro-editor-img');
+
+            img.src = resolveImagePath(photo.image);
+
+            proEditorState.zoom = photo.scale ?? 1;
+            proEditorState.posX = photo.posX ?? 50;
+            proEditorState.posY = photo.posY ?? 50;
+            proEditorState.ratio = photo.ratio ?? '3/4';
+
+            document.getElementById('pro-zoom-slider').value = proEditorState.zoom;
+            document.getElementById('pro-pos-x-slider').value = proEditorState.posX;
+            document.getElementById('pro-pos-y-slider').value = proEditorState.posY;
+
+            // Restore canvas aspect ratio
+            const canvas = document.getElementById('pro-canvas-area');
+            canvas.style.aspectRatio = proEditorState.ratio;
+
+            // Update active ratio button
+            document.querySelectorAll('.pro-ratio-btn').forEach(btn => {
+                btn.classList.remove('border-neutral-900', 'bg-neutral-50');
+                btn.classList.add('border-gray-300', 'bg-white');
+                btn.removeAttribute('data-active');
+            });
+            
+            // Find and highlight the correct button
+            const ratioMap = { '16/9': 0, '3/4': 1, '1/1': 2 };
+            const buttonIdx = ratioMap[proEditorState.ratio] ?? 1;
+            const buttons = document.querySelectorAll('.pro-ratio-btn');
+            if (buttons[buttonIdx]) {
+                buttons[buttonIdx].classList.remove('border-gray-300', 'bg-white');
+                buttons[buttonIdx].classList.add('border-neutral-900', 'bg-neutral-50');
+                buttons[buttonIdx].setAttribute('data-active', 'true');
+            }
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+
+            proEditorSetupEvents();
+            proEditorUpdate();
+        }
+
+        function proEditorSetupEvents() {
+            const layer = document.getElementById('pro-interaction-layer');
+            
+            layer.onmousedown = (e) => {
+                proEditorState.isDragging = true;
+                proEditorState.startX = e.clientX;
+                proEditorState.startY = e.clientY;
+            };
+
+            window.onmousemove = (e) => {
+                if (!proEditorState.isDragging) return;
+                const deltaX = (e.clientX - proEditorState.startX) * (0.15 / proEditorState.zoom);
+                const deltaY = (e.clientY - proEditorState.startY) * (0.15 / proEditorState.zoom);
+                
+                proEditorState.posX = Math.max(0, Math.min(100, proEditorState.posX - deltaX));
+                proEditorState.posY = Math.max(0, Math.min(100, proEditorState.posY - deltaY));
+
+                document.getElementById('pro-pos-x-slider').value = proEditorState.posX;
+                document.getElementById('pro-pos-y-slider').value = proEditorState.posY;
+
+                proEditorState.startX = e.clientX;
+                proEditorState.startY = e.clientY;
+
+                proEditorUpdate();
+            };
+
+            window.onmouseup = () => {
+                proEditorState.isDragging = false;
+            };
+
+            layer.onwheel = (e) => {
+                e.preventDefault();
+                const delta = e.deltaY > 0 ? -0.05 : 0.05;
+                proEditorState.zoom = Math.max(1, Math.min(2, proEditorState.zoom + delta));
+                document.getElementById('pro-zoom-slider').value = proEditorState.zoom;
+                proEditorUpdate();
+            };
+        }
+
+        function proEditorUpdate() {
+            proEditorState.zoom = parseFloat(document.getElementById('pro-zoom-slider').value);
+            proEditorState.posX = parseInt(document.getElementById('pro-pos-x-slider').value);
+            proEditorState.posY = parseInt(document.getElementById('pro-pos-y-slider').value);
+            const showGrid = document.getElementById('grid-toggle').checked;
+
+            const img = document.getElementById('pro-editor-img');
+            img.style.transform = `scale(${proEditorState.zoom})`;
+            img.style.objectPosition = `${proEditorState.posX}% ${proEditorState.posY}%`;
+
+            document.getElementById('pro-rule-of-thirds').style.opacity = showGrid ? '1' : '0';
+            document.getElementById('zoom-val').textContent = proEditorState.zoom.toFixed(2) + 'x';
+            document.getElementById('x-val').textContent = proEditorState.posX + '%';
+            document.getElementById('y-val').textContent = proEditorState.posY + '%';
+
+            document.getElementById('pro-hud-x').textContent = proEditorState.posX;
+            document.getElementById('pro-hud-y').textContent = proEditorState.posY;
+            document.getElementById('pro-hud-z').textContent = proEditorState.zoom.toFixed(2);
+        }
+
+        function proEditorAdjustZoom(amount) {
+            const slider = document.getElementById('pro-zoom-slider');
+            slider.value = Math.max(1, Math.min(2, parseFloat(slider.value) + amount));
+            proEditorUpdate();
+        }
+
+        function proEditorReset() {
+            document.getElementById('pro-zoom-slider').value = 1;
+            document.getElementById('pro-pos-x-slider').value = 50;
+            document.getElementById('pro-pos-y-slider').value = 50;
+            proEditorUpdate();
+        }
+
+        function proEditorSetRatio(ratio) {
+            proEditorState.ratio = ratio;
+            const canvas = document.getElementById('pro-canvas-area');
+            canvas.style.aspectRatio = ratio;
+
+            // Update button active states
+            document.querySelectorAll('.pro-ratio-btn').forEach(btn => {
+                btn.classList.remove('border-neutral-900', 'bg-neutral-50');
+                btn.classList.add('border-gray-300', 'bg-white');
+                btn.removeAttribute('data-active');
+            });
+            const btn = event.target.closest('.pro-ratio-btn');
+            if (btn) {
+                btn.classList.remove('border-gray-300', 'bg-white');
+                btn.classList.add('border-neutral-900', 'bg-neutral-50');
+                btn.setAttribute('data-active', 'true');
+            }
+        }
+
+        function proEditorResetToDefault() {
+            proEditorState.ratio = '3/4';
+            const canvas = document.getElementById('pro-canvas-area');
+            canvas.style.aspectRatio = '3/4';
+
+            // Update button active states
+            document.querySelectorAll('.pro-ratio-btn').forEach(btn => {
+                btn.classList.remove('border-neutral-900', 'bg-neutral-50');
+                btn.classList.add('border-gray-300', 'bg-white');
+                btn.removeAttribute('data-active');
+            });
+            // Set the PORTFÓLIO button as active
+            document.querySelectorAll('.pro-ratio-btn')[1].classList.remove('border-gray-300', 'bg-white');
+            document.querySelectorAll('.pro-ratio-btn')[1].classList.add('border-neutral-900', 'bg-neutral-50');
+            document.querySelectorAll('.pro-ratio-btn')[1].setAttribute('data-active', 'true');
+        }
+
+
+        function closePhotoEditor() {
+            const modal = document.getElementById('photo-editor-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            editingPhotoIndex = null;
+
+            window.onmousemove = null;
+            window.onmouseup = null;
+        }
+
+        async function savePhotoPosition() {
+            if (editingPhotoIndex === null) return;
+
+            appData.portfolio[editingPhotoIndex].posX = Math.round(proEditorState.posX);
+            appData.portfolio[editingPhotoIndex].posY = Math.round(proEditorState.posY);
+            appData.portfolio[editingPhotoIndex].scale = parseFloat(proEditorState.zoom.toFixed(2));
+            appData.portfolio[editingPhotoIndex].ratio = proEditorState.ratio;
+
+            try {
+                await api.updateSiteData(buildSaveData());
+            } catch (err) {
+                console.warn('Erro ao salvar posição da foto:', err);
+            }
+
+            closePhotoEditor();
+            renderPortfolio();
+        }
+
+        function handleDragStart(e, idx) {
+            draggedIndex = idx;
+            e.target.classList.add('opacity-50', 'scale-95');
+            e.dataTransfer.effectAllowed = 'move';
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+        }
+
+        function handleDrop(e, targetIdx) {
+            e.preventDefault();
+            if (draggedIndex === null || draggedIndex === targetIdx) return;
+
+            // Reordenar array
+            const item = appData.portfolio.splice(draggedIndex, 1)[0];
+            appData.portfolio.splice(targetIdx, 0, item);
+
+            renderPortfolio();
+            saveDados();
+        }
+
+        function handleDragEnd(e) {
+            e.target.classList.remove('opacity-50', 'scale-95');
+            draggedIndex = null;
+        }
+
+        async function handlePortfolioUpload(e) {
+            const files = e.target.files;
+            if (!files.length) return;
+
+            let addedCount = 0;
+            let errors = [];
+
+            for (const file of files) {
+                try {
+                    const result = await uploadImage(file);
+                    if (result.ok) {
+                        appData.portfolio.push({ image: result.data.url });
+                        addedCount += 1;
+                    } else {
+                        console.error('Erro no upload:', result.error);
+                        errors.push(result.error);
+                    }
+                } catch (error) {
+                    console.error('Erro no upload:', error);
+                    const errorMsg = error?.error || error?.message || 'Erro desconhecido';
+                    errors.push(errorMsg);
+                }
+            }
+
+            renderPortfolio();
+            
+            if (errors.length > 0) {
+                alert(`Erros no upload:\n${errors.join('\n')}`);
+            }
+            
+            if (addedCount > 0) {
+                alert(`${addedCount} foto(s) adicionada(s)!`);
+                saveDados();
+            }
+        }
+
+        async function handleDropUpload(e) {
+            e.preventDefault();
+            e.target.classList.remove('border-neutral-900', 'bg-gray-100');
+
+            const files = e.dataTransfer.files;
+            if (!files.length) return;
+
+            let addedCount = 0;
+            let errors = [];
+
+            for (const file of files) {
+                try {
+                    const result = await uploadImage(file);
+                    if (result.ok) {
+                        appData.portfolio.push({ image: result.data.url });
+                        addedCount += 1;
+                    } else {
+                        console.error('Erro no upload:', result.error);
+                        errors.push(result.error);
+                    }
+                } catch (error) {
+                    console.error('Erro no upload:', error);
+                    const errorMsg = error?.error || error?.message || 'Erro desconhecido';
+                    errors.push(errorMsg);
+                }
+            }
+
+            renderPortfolio();
+            
+            if (errors.length > 0) {
+                alert(`Erros no upload:\n${errors.join('\n')}`);
+            }
+            
+            if (addedCount > 0) {
+                alert(`${addedCount} foto(s) adicionada(s)!`);
+                saveDados();
+            }
+        }
+
+        function deletePortfolioImage(idx) {
+            if (confirm('Remover esta foto da galeria?')) {
+                appData.portfolio.splice(idx, 1);
+                renderPortfolio();
+                saveDados();
+            }
+        }
+
+        function renderAlbuns() {
+            if (!Array.isArray(appData.albums)) {
+                appData.albums = [];
+            }
+
+            const albumsHtml = appData.albums.map((album, idx) => {
+                const coverUrl = album.cover || album.photos?.[0] || '';
+                const photos = Array.isArray(album.photos) ? album.photos : [];
+                return `
+                    <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6 space-y-4">
+                        <div class="flex items-start justify-between gap-4">
+                            <div class="flex-1 space-y-3">
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-600 mb-1">Título do Álbum</label>
+                                    <input type="text" value="${album.title || ''}" oninput="appData.albums[${idx}].title = this.value; saveDados();" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" placeholder="Ex: Casamento Ana & João">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-600 mb-1">Subtítulo</label>
+                                    <input type="text" value="${album.subtitle || ''}" oninput="appData.albums[${idx}].subtitle = this.value; saveDados();" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" placeholder="Ex: Ensaio completo">
+                                </div>
+                            </div>
+                            <div class="w-32 h-32 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0 border border-gray-200">
+                                ${coverUrl ? `<img src="${resolveImagePath(coverUrl)}" class="w-full h-full object-cover">` : `<div class="w-full h-full flex items-center justify-center text-xs text-gray-400">Sem capa</div>`}
+                            </div>
+                            <button onclick="removeAlbum(${idx})" class="text-red-500 hover:text-red-700 p-2" title="Remover álbum">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-sm font-semibold text-gray-800">Fotos do Álbum (${photos.length})</h3>
+                            <label class="bg-neutral-900 text-white px-4 py-2 rounded-lg text-xs font-semibold hover:bg-gray-800 flex items-center gap-2 cursor-pointer">
+                                <i data-lucide="upload" class="w-4 h-4"></i> Upload de Fotos
+                                <input type="file" accept=".jpg,.jpeg,.png" multiple class="hidden" onchange="handleAlbumPhotosUpload(event, ${idx})">
+                            </label>
+                        </div>
+
+                        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                            ${photos.map((photoUrl, photoIdx) => `
+                                <div class="relative group aspect-[3/4] bg-gray-100 rounded-lg overflow-hidden border border-gray-200">
+                                    <img src="${resolveImagePath(photoUrl)}" class="w-full h-full object-cover">
+                                    <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                                        <button onclick="event.stopPropagation(); setAlbumCover(${idx}, '${photoUrl.replace(/'/g, "\\'")}')" class="bg-blue-500 text-white p-2 rounded-full hover:bg-blue-600" title="Definir como capa">
+                                            <i data-lucide="image" class="w-4 h-4"></i>
+                                        </button>
+                                        <button onclick="event.stopPropagation(); removeAlbumPhoto(${idx}, ${photoIdx})" class="bg-red-500 text-white p-2 rounded-full hover:bg-red-600" title="Remover">
+                                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            const html = `
+                <div class="space-y-6">
+                    <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                        <div>
+                            <h2 class="text-lg font-semibold text-gray-900">Álbuns</h2>
+                            <p class="text-sm text-gray-500">Crie e gerencie os álbuns da galeria. O botão na Home mostra os 4 mais recentes.</p>
+                        </div>
+                        <button onclick="addAlbum()" class="bg-neutral-900 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-gray-800 flex items-center gap-2">
+                            <i data-lucide="plus" class="w-4 h-4"></i> Criar Álbum
+                        </button>
+                    </div>
+
+                    ${albumsHtml || '<div class="bg-white rounded-xl border border-gray-200 shadow-sm p-10 text-center text-sm text-gray-500">Nenhum álbum criado ainda.</div>'}
+                </div>
+            `;
+
+            document.getElementById('content-area').innerHTML = html;
+            lucide.createIcons();
+        }
+
+        function addAlbum() {
+            if (!Array.isArray(appData.albums)) appData.albums = [];
+            appData.albums.unshift({
+                title: '',
+                subtitle: '',
+                cover: '',
+                photos: [],
+                createdAt: new Date().toISOString()
+            });
+            renderAlbuns();
+            saveDados();
+            lucide.createIcons();
+        }
+
+        function removeAlbum(index) {
+            if (confirm('Remover este álbum e todas as fotos?')) {
+                appData.albums.splice(index, 1);
+                renderAlbuns();
+                saveDados();
+                lucide.createIcons();
+            }
+        }
+
+        function setAlbumCover(albumIndex, photoUrl) {
+            appData.albums[albumIndex].cover = photoUrl;
+            renderAlbuns();
+            saveDados();
+            lucide.createIcons();
+        }
+
+        function removeAlbumPhoto(albumIndex, photoIndex) {
+            const album = appData.albums[albumIndex];
+            const removed = album.photos[photoIndex];
+            album.photos.splice(photoIndex, 1);
+            if (album.cover && album.cover === removed) {
+                album.cover = album.photos[0] || '';
+            }
+            renderAlbuns();
+            saveDados();
+            lucide.createIcons();
+        }
+
+        async function handleAlbumPhotosUpload(event, albumIndex) {
+            const files = Array.from(event.target.files || []);
+            if (!files.length) return;
+
+            const album = appData.albums[albumIndex];
+            for (const file of files) {
+                const result = await uploadImage(file);
+                if (!result.ok) {
+                    alert(result.error);
+                    continue;
+                }
+                album.photos = album.photos || [];
+                album.photos.push(result.data.url);
+                if (!album.cover) {
+                    album.cover = result.data.url;
+                }
+            }
+
+            renderAlbuns();
+            saveDados();
+            lucide.createIcons();
+        }
+
+        let studioEditingIndex = null;
+        let studioDraggedIndex = null;
+        let studioEditorState = { posX: 50, posY: 50, scale: 1, isDragging: false, startX: 0, startY: 0 };
+
+        function renderEstudio() {
+            const s = appData.studio;
+            // Garantir que photos existe
+            if (!s.photos) {
+                s.photos = [
+                    { image: s.img1 || "IMG_8586.jpg", posX: 50, posY: 50, scale: 1 },
+                    { image: s.img2 || "IMG_9153.jpg", posX: 50, posY: 50, scale: 1 }
+                ];
+            }
+
+            const html = `
+                <div class="max-w-4xl mx-auto space-y-6">
+                    <!-- Título e Descrição do Estúdio -->
+                    <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                        <div class="control-group-title mb-4">
+                            <i data-lucide="type" class="w-4 h-4"></i> Apresentação do Estúdio
+                        </div>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Título</label>
+                                <input type="text" id="studio-title" value="${s.title || ''}" placeholder="Ex: Situado no Coração do Morumbi"
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-neutral-900"
+                                    oninput="appData.studio.title = this.value; saveDados();">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Descrição</label>
+                                <textarea id="studio-description" rows="3" placeholder="Descreva seu estúdio..."
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-neutral-900"
+                                    oninput="appData.studio.description = this.value; saveDados();">${s.description || ''}</textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Informações -->
+                    <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                        <div class="control-group-title mb-4">
+                            <i data-lucide="map-pin" class="w-4 h-4"></i> Informações do Estúdio
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Endereço</label>
+                                <input type="text" id="studio-address" value="${s.address}"
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-neutral-900"
+                                    oninput="appData.studio.address = this.value; saveDados();">
+                                <textarea id="studio-hours" rows="2"
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-neutral-900"
+                                    oninput="appData.studio.hours = this.value; saveDados();">${s.hours}</textarea>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">WhatsApp (com DDD)</label>
+                                <input type="text" id="studio-whatsapp" value="${s.whatsapp || ''}" placeholder="5511999999999"
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-neutral-900"
+                                    oninput="appData.studio.whatsapp = this.value; saveDados();">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Mensagens do WhatsApp -->
+                    <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                        <div class="flex justify-between items-center mb-6">
+                            <div>
+                                <h2 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                                    <i data-lucide="message-circle" class="w-5 h-5 text-green-500"></i>
+                                    Mensagens do WhatsApp
+                                </h2>
+                                <p class="text-sm text-gray-500 mt-1">Configure as mensagens que aparecem na bolha flutuante em sequência</p>
+                            </div>
+                            <button onclick="addWhatsappMessage()" class="bg-green-500 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-green-600 flex items-center gap-2">
+                                <i data-lucide="plus" class="w-4 h-4"></i> Nova Mensagem
+                            </button>
+                        </div>
+
+                        <div id="whatsapp-messages-list" class="space-y-3">
+                            ${(s.whatsappMessages || [{ text: 'Olá! Como posso ajudar você hoje?', delay: 5 }]).map((msg, idx) => `
+                                <div class="whatsapp-message-item flex items-start gap-3 p-4 bg-gray-50 rounded-lg border border-gray-200" data-index="${idx}">
+                                    <div class="flex-shrink-0 w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center font-bold text-sm">
+                                        ${idx + 1}
+                                    </div>
+                                    <div class="flex-1 space-y-2">
+                                        <textarea class="whatsapp-msg-text w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-green-500 resize-none"
+                                            rows="2" placeholder="Digite a mensagem...">${msg.text}</textarea>
+                                        <div class="flex items-center gap-2">
+                                            <label class="text-xs text-gray-500">Delay (segundos):</label>
+                                            <input type="number" class="whatsapp-msg-delay w-20 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:border-green-500"
+                                                value="${msg.delay}" min="1" max="60">
+                                            <span class="text-xs text-gray-400">após a mensagem anterior</span>
+                                        </div>
+                                    </div>
+                                    <button onclick="removeWhatsappMessage(${idx})" class="flex-shrink-0 p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors" title="Remover mensagem">
+                                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                    </button>
+                                </div>
+                            `).join('')}
+                        </div>
+
+                        <div class="mt-4 p-4 bg-green-50 rounded-lg border border-green-200">
+                            <p class="text-sm text-green-700">
+                                <i data-lucide="info" class="w-4 h-4 inline mr-1"></i>
+                                As mensagens aparecerão em sequência. A primeira mensagem aparece após o delay configurado, e cada mensagem seguinte aparece após seu próprio delay.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Fotos do Estúdio -->
+                    <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                        <div class="flex justify-between items-center mb-6">
+                            <div>
+                                <h2 class="text-lg font-semibold text-gray-900">Fotos do Estúdio</h2>
+                                <p class="text-sm text-gray-500">Arraste para reordenar, clique para ajustar posição</p>
+                            </div>
+                            <label class="bg-neutral-900 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-gray-800 flex items-center gap-2 cursor-pointer">
+                                <i data-lucide="upload" class="w-4 h-4"></i> Upload de Fotos
+                                <input type="file" accept=".jpg,.jpeg,.png" multiple class="hidden" onchange="handleStudioPhotosUpload(event)">
+                            </label>
+                        </div>
+
+                        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3" id="studio-photos-grid">
+                            ${s.photos.map((p, idx) => {
+                                const posX = p.posX ?? 50;
+                                const posY = p.posY ?? 50;
+                                const scale = p.scale ?? 1;
+                                return `
+                                <div class="studio-photo-item relative group aspect-video bg-gray-100 rounded-lg overflow-hidden border-2 border-transparent hover:border-neutral-900 transition-all cursor-move"
+                                    draggable="true"
+                                    data-index="${idx}"
+                                    ondragstart="handleStudioDragStart(event, ${idx})"
+                                    ondragover="handleStudioDragOver(event)"
+                                    ondrop="handleStudioDrop(event, ${idx})"
+                                    ondragend="handleStudioDragEnd(event)">
+                                    <img src="${resolveImagePath(p.image)}" alt="Estúdio ${idx+1}"
+                                        class="w-full h-full object-cover pointer-events-none transition-all"
+                                        style="object-position: ${posX}% ${posY}%; transform: scale(${scale});">
+                                    <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                                        <button onclick="event.stopPropagation(); openStudioPhotoEditor(${idx})" class="bg-blue-500 text-white p-2 rounded-full hover:bg-blue-600" title="Ajustar posição">
+                                            <i data-lucide="move" class="w-4 h-4"></i>
+                                        </button>
+                                        <button onclick="event.stopPropagation(); deleteStudioPhoto(${idx})" class="bg-red-500 text-white p-2 rounded-full hover:bg-red-600" title="Remover">
+                                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                        </button>
+                                    </div>
+                                    <div class="absolute bottom-2 left-2 bg-black/70 text-white text-xs px-2 py-1 rounded font-medium">
+                                        ${idx + 1}
+                                    </div>
+                                    <div class="absolute top-2 right-2 bg-black/70 text-white p-1 rounded opacity-0 group-hover:opacity-100">
+                                        <i data-lucide="grip-vertical" class="w-4 h-4"></i>
+                                    </div>
+                                </div>
+                            `}).join('')}
+                        </div>
+
+                        <div class="mt-4 p-4 bg-gray-50 rounded-lg border border-dashed border-gray-300 text-center"
+                            ondragover="event.preventDefault(); this.classList.add('border-neutral-900', 'bg-gray-100')"
+                            ondragleave="this.classList.remove('border-neutral-900', 'bg-gray-100')"
+                            ondrop="handleStudioDropUpload(event)">
+                            <p class="text-sm text-gray-500">Arraste imagens aqui para adicionar ou use o botão de upload</p>
+                        </div>
+                    </div>
+
+                    <!-- Modal Editor de Foto do Estúdio -->
+                    <div id="studio-photo-editor-modal" class="fixed inset-0 bg-black/80 z-50 hidden items-center justify-center p-4">
+                        <div class="bg-white rounded-xl max-w-lg w-full max-h-[90vh] overflow-hidden shadow-2xl">
+                            <div class="p-4 border-b border-gray-200 flex justify-between items-center">
+                                <h3 class="font-semibold text-gray-900">Ajustar Posição da Foto</h3>
+                                <button onclick="closeStudioPhotoEditor()" class="text-gray-500 hover:text-gray-700">
+                                    <i data-lucide="x" class="w-5 h-5"></i>
+                                </button>
+                            </div>
+                            <div class="p-4">
+                                <div id="studio-editor-container" class="aspect-video bg-gray-900 rounded-lg overflow-hidden mb-4 mx-auto cursor-grab active:cursor-grabbing relative select-none"
+                                    style="max-width: 400px;">
+                                    <img id="studio-editor-preview-img" src="" alt="Preview"
+                                        class="w-full h-full object-cover pointer-events-none transition-none">
+                                    <div class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-0 transition-opacity" id="studio-editor-hint">
+                                        <div class="bg-black/60 text-white text-xs px-3 py-2 rounded-lg">
+                                            Arraste para mover · Scroll para zoom
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="flex justify-center gap-6 text-sm text-gray-600 mb-4">
+                                    <span>X: <strong id="studio-editor-pos-x-val">50</strong>%</span>
+                                    <span>Y: <strong id="studio-editor-pos-y-val">50</strong>%</span>
+                                    <span>Zoom: <strong id="studio-editor-scale-val">1.00</strong>x</span>
+                                </div>
+                            </div>
+                            <div class="p-4 border-t border-gray-200 flex justify-between">
+                                <button onclick="resetStudioPhotoPosition()" class="px-4 py-2 text-gray-600 hover:text-gray-800 flex items-center gap-2">
+                                    <i data-lucide="rotate-ccw" class="w-4 h-4"></i> Resetar
+                                </button>
+                                <div class="flex gap-2">
+                                    <button onclick="closeStudioPhotoEditor()" class="px-4 py-2 text-gray-600 hover:text-gray-800">
+                                        Cancelar
+                                    </button>
+                                    <button onclick="saveStudioPhotoPosition()" class="px-4 py-2 bg-neutral-900 text-white rounded-lg hover:bg-gray-800">
+                                        Salvar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.getElementById('content-area').innerHTML = html;
+            lucide.createIcons();
+        }
+
+        // ===== STUDIO PHOTO EDITOR =====
+        function openStudioPhotoEditor(idx) {
+            studioEditingIndex = idx;
+            const photo = appData.studio.photos[idx];
+            const modal = document.getElementById('studio-photo-editor-modal');
+            const img = document.getElementById('studio-editor-preview-img');
+            const container = document.getElementById('studio-editor-container');
+
+            img.src = resolveImagePath(photo.image);
+
+            studioEditorState.posX = photo.posX ?? 50;
+            studioEditorState.posY = photo.posY ?? 50;
+            studioEditorState.scale = photo.scale ?? 1;
+
+            updateStudioPhotoPreview();
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+
+            const hint = document.getElementById('studio-editor-hint');
+            hint.classList.remove('opacity-0');
+            setTimeout(() => hint.classList.add('opacity-0'), 2000);
+
+            container.onmousedown = startStudioDrag;
+            container.onmousemove = onStudioDrag;
+            container.onmouseup = endStudioDrag;
+            container.onmouseleave = endStudioDrag;
+            container.onwheel = onStudioZoom;
+            container.ontouchstart = startStudioDragTouch;
+            container.ontouchmove = onStudioDragTouch;
+            container.ontouchend = endStudioDrag;
+        }
+
+        function startStudioDrag(e) {
+            e.preventDefault();
+            studioEditorState.isDragging = true;
+            studioEditorState.startX = e.clientX;
+            studioEditorState.startY = e.clientY;
+            document.getElementById('studio-editor-container').style.cursor = 'grabbing';
+        }
+
+        function startStudioDragTouch(e) {
+            if (e.touches.length === 1) {
+                studioEditorState.isDragging = true;
+                studioEditorState.startX = e.touches[0].clientX;
+                studioEditorState.startY = e.touches[0].clientY;
+            }
+        }
+
+        function onStudioDrag(e) {
+            if (!studioEditorState.isDragging) return;
+            e.preventDefault();
+            const deltaX = e.clientX - studioEditorState.startX;
+            const deltaY = e.clientY - studioEditorState.startY;
+            const sensitivity = 0.5;
+            studioEditorState.posX = Math.max(0, Math.min(100, studioEditorState.posX - deltaX * sensitivity));
+            studioEditorState.posY = Math.max(0, Math.min(100, studioEditorState.posY - deltaY * sensitivity));
+            studioEditorState.startX = e.clientX;
+            studioEditorState.startY = e.clientY;
+            updateStudioPhotoPreview();
+        }
+
+        function onStudioDragTouch(e) {
+            if (!studioEditorState.isDragging || e.touches.length !== 1) return;
+            e.preventDefault();
+            const deltaX = e.touches[0].clientX - studioEditorState.startX;
+            const deltaY = e.touches[0].clientY - studioEditorState.startY;
+            const sensitivity = 0.5;
+            studioEditorState.posX = Math.max(0, Math.min(100, studioEditorState.posX - deltaX * sensitivity));
+            studioEditorState.posY = Math.max(0, Math.min(100, studioEditorState.posY - deltaY * sensitivity));
+            studioEditorState.startX = e.touches[0].clientX;
+            studioEditorState.startY = e.touches[0].clientY;
+            updateStudioPhotoPreview();
+        }
+
+        function endStudioDrag() {
+            studioEditorState.isDragging = false;
+            const container = document.getElementById('studio-editor-container');
+            if (container) container.style.cursor = 'grab';
+        }
+
+        function onStudioZoom(e) {
+            e.preventDefault();
+            const delta = e.deltaY > 0 ? -0.05 : 0.05;
+            studioEditorState.scale = Math.max(1, Math.min(2, studioEditorState.scale + delta));
+            updateStudioPhotoPreview();
+        }
+
+        function closeStudioPhotoEditor() {
+            const modal = document.getElementById('studio-photo-editor-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            studioEditingIndex = null;
+        }
+
+        function updateStudioPhotoPreview() {
+            const posX = Math.round(studioEditorState.posX);
+            const posY = Math.round(studioEditorState.posY);
+            const scale = studioEditorState.scale.toFixed(2);
+
+            document.getElementById('studio-editor-pos-x-val').textContent = posX;
+            document.getElementById('studio-editor-pos-y-val').textContent = posY;
+            document.getElementById('studio-editor-scale-val').textContent = scale;
+
+            const img = document.getElementById('studio-editor-preview-img');
+            img.style.objectPosition = `${posX}% ${posY}%`;
+            img.style.transform = `scale(${studioEditorState.scale})`;
+        }
+
+        function resetStudioPhotoPosition() {
+            studioEditorState.posX = 50;
+            studioEditorState.posY = 50;
+            studioEditorState.scale = 1;
+            updateStudioPhotoPreview();
+        }
+
+        function saveStudioPhotoPosition() {
+            if (studioEditingIndex === null) return;
+            appData.studio.photos[studioEditingIndex].posX = Math.round(studioEditorState.posX);
+            appData.studio.photos[studioEditingIndex].posY = Math.round(studioEditorState.posY);
+            appData.studio.photos[studioEditingIndex].scale = studioEditorState.scale;
+            closeStudioPhotoEditor();
+            renderEstudio();
+        }
+
+        // ===== STUDIO DRAG & DROP =====
+        function handleStudioDragStart(e, idx) {
+            studioDraggedIndex = idx;
+            e.target.classList.add('opacity-50', 'scale-95');
+            e.dataTransfer.effectAllowed = 'move';
+        }
+
+        function handleStudioDragOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+        }
+
+        function handleStudioDrop(e, targetIdx) {
+            e.preventDefault();
+            if (studioDraggedIndex === null || studioDraggedIndex === targetIdx) return;
+            const item = appData.studio.photos.splice(studioDraggedIndex, 1)[0];
+            appData.studio.photos.splice(targetIdx, 0, item);
+            renderEstudio();
+        }
+
+        function handleStudioDragEnd(e) {
+            e.target.classList.remove('opacity-50', 'scale-95');
+            studioDraggedIndex = null;
+        }
+
+        // ===== STUDIO UPLOAD =====
+        async function handleStudioPhotosUpload(e) {
+            const files = e.target.files;
+            if (!files.length) return;
+
+            let addedCount = 0;
+
+            for (const file of files) {
+                const result = await uploadImage(file);
+                if (result.ok) {
+                    appData.studio.photos.push({ image: result.data.url, posX: 50, posY: 50, scale: 1 });
+                    addedCount += 1;
+                } else {
+                    console.error('Erro no upload:', result.error);
+                    alert(result.error);
+                }
+            }
+            renderEstudio();
+            if (addedCount > 0) {
+                alert(`${addedCount} foto(s) adicionada(s)!`);
+            }
+        }
+
+        async function handleStudioDropUpload(e) {
+            e.preventDefault();
+            e.target.classList.remove('border-neutral-900', 'bg-gray-100');
+            const files = e.dataTransfer.files;
+            if (!files.length) return;
+
+            let addedCount = 0;
+
+            for (const file of files) {
+                const result = await uploadImage(file);
+                if (result.ok) {
+                    appData.studio.photos.push({ image: result.data.url, posX: 50, posY: 50, scale: 1 });
+                    addedCount += 1;
+                } else {
+                    console.error('Erro no upload:', result.error);
+                    alert(result.error);
+                }
+            }
+            renderEstudio();
+            if (addedCount > 0) {
+                alert(`${addedCount} foto(s) adicionada(s)!`);
+            }
+        }
+
+        function deleteStudioPhoto(idx) {
+            if (confirm('Remover esta foto do estúdio?')) {
+                appData.studio.photos.splice(idx, 1);
+                renderEstudio();
+            }
+        }
+
+        // ===== WHATSAPP MESSAGES =====
+        function addWhatsappMessage() {
+            if (!appData.studio.whatsappMessages) {
+                appData.studio.whatsappMessages = [];
+            }
+            appData.studio.whatsappMessages.push({ text: '', delay: 5 });
+            renderEstudio();
+            lucide.createIcons();
+            // Scroll to the new message
+            setTimeout(() => {
+                const list = document.getElementById('whatsapp-messages-list');
+                if (list) list.scrollTop = list.scrollHeight;
+            }, 100);
+        }
+
+        function removeWhatsappMessage(idx) {
+            if (appData.studio.whatsappMessages.length <= 1) {
+                alert('Você deve ter pelo menos uma mensagem configurada.');
+                return;
+            }
+            if (confirm('Remover esta mensagem?')) {
+                appData.studio.whatsappMessages.splice(idx, 1);
+                renderEstudio();
+                lucide.createIcons();
+            }
+        }
+
+        function collectWhatsappMessages() {
+            const items = document.querySelectorAll('.whatsapp-message-item');
+            const messages = [];
+            items.forEach((item, idx) => {
+                const text = item.querySelector('.whatsapp-msg-text')?.value || '';
+                const delay = parseInt(item.querySelector('.whatsapp-msg-delay')?.value) || 5;
+                if (text.trim()) {
+                    messages.push({ text: text.trim(), delay: Math.max(1, Math.min(60, delay)) });
+                }
+            });
+            return messages.length ? messages : [{ text: 'Olá! Como posso ajudar você hoje?', delay: 5 }];
+        }
+
+        function buildSaveData() {
+            // Coletar dados de TODAS as abas, sempre
+            
+            // HERO - Coletar todos os inputs do hero
+            const heroTitle = document.getElementById('hero-title');
+            const heroSubtitle = document.getElementById('hero-subtitle');
+            const heroImage = document.getElementById('hero-image');
+            const heroScale = document.getElementById('hero-scale');
+            const heroImgX = document.getElementById('hero-img-x');
+            const heroImgY = document.getElementById('hero-img-y');
+            const heroTitleX = document.getElementById('hero-title-x');
+            const heroTitleY = document.getElementById('hero-title-y');
+            const heroTitleSize = document.getElementById('hero-title-size');
+            const heroSubX = document.getElementById('hero-sub-x');
+            const heroSubY = document.getElementById('hero-sub-y');
+            const heroSubSize = document.getElementById('hero-sub-size');
+            const heroTopBar = document.getElementById('hero-top-bar');
+            const heroBottomBar = document.getElementById('hero-bottom-bar');
+            const heroOverlay = document.getElementById('hero-overlay');
+            
+            if (heroTitle && heroTitle.value) appData.hero.title = heroTitle.value;
+            if (heroSubtitle && heroSubtitle.value) appData.hero.subtitle = heroSubtitle.value;
+            if (heroImage && heroImage.value) appData.hero.image = heroImage.value;
+            if (heroScale) appData.hero.imageScale = parseFloat(heroScale.value);
+            if (heroImgX) appData.hero.imagePosX = parseFloat(heroImgX.value);
+            if (heroImgY) appData.hero.imagePosY = parseFloat(heroImgY.value);
+            if (heroTitleX) appData.hero.titlePosX = parseFloat(heroTitleX.value);
+            if (heroTitleY) appData.hero.titlePosY = parseFloat(heroTitleY.value);
+            if (heroTitleSize) appData.hero.titleSize = parseFloat(heroTitleSize.value);
+            if (heroSubX) appData.hero.subtitlePosX = parseFloat(heroSubX.value);
+            if (heroSubY) appData.hero.subtitlePosY = parseFloat(heroSubY.value);
+            if (heroSubSize) appData.hero.subtitleSize = parseFloat(heroSubSize.value);
+            if (heroTopBar) appData.hero.topBarHeight = parseFloat(heroTopBar.value);
+            if (heroBottomBar) appData.hero.bottomBarHeight = parseFloat(heroBottomBar.value);
+            if (heroOverlay) appData.hero.overlayOpacity = parseFloat(heroOverlay.value);
+            
+            // Sobre
+            const aboutTitle = document.getElementById('about-title');
+            const aboutText = document.getElementById('about-text');
+            const aboutImage = document.getElementById('about-image');
+            if (aboutTitle && aboutTitle.value) appData.about.title = aboutTitle.value;
+            if (aboutText && aboutText.value) appData.about.text = aboutText.value;
+            if (aboutImage && aboutImage.value) appData.about.image = aboutImage.value;
+
+            // Estúdio
+            const studioTitle = document.getElementById('studio-title');
+            const studioDescription = document.getElementById('studio-description');
+            const studioAddress = document.getElementById('studio-address');
+            const studioHours = document.getElementById('studio-hours');
+            const studioWhatsapp = document.getElementById('studio-whatsapp');
+            
+            if (studioTitle && studioTitle.value) appData.studio.title = studioTitle.value;
+            if (studioDescription && studioDescription.value) appData.studio.description = studioDescription.value;
+            if (studioAddress && studioAddress.value) appData.studio.address = studioAddress.value;
+            if (studioHours && studioHours.value) appData.studio.hours = studioHours.value;
+            if (studioWhatsapp && studioWhatsapp.value) appData.studio.whatsapp = studioWhatsapp.value;
+            
+            // Sempre coletar mensagens de WhatsApp
+            const whatsappMsgList = document.getElementById('whatsapp-messages-list');
+            if (whatsappMsgList) {
+                appData.studio.whatsappMessages = collectWhatsappMessages();
+            }
+
+            // FOOTER - Coletar dados do footer
+            const footerInstagram = document.getElementById('footer-instagram');
+            const footerFacebook = document.getElementById('footer-facebook');
+            const footerLinkedin = document.getElementById('footer-linkedin');
+            const footerTiktok = document.getElementById('footer-tiktok');
+            const footerYoutube = document.getElementById('footer-youtube');
+            const footerEmail = document.getElementById('footer-email');
+            const footerNewsletterEnabled = document.getElementById('footer-newsletter-enabled');
+            const footerNewsletterTitle = document.getElementById('footer-newsletter-title');
+            const footerNewsletterDesc = document.getElementById('footer-newsletter-desc');
+            const footerCopyright = document.getElementById('footer-copyright');
+
+            // Só atualizar footer se os elementos existirem (quando estamos na aba footer)
+            if (footerInstagram) {
+                if (appData.footer) {
+                    appData.footer.socialMedia.instagram = footerInstagram.value;
+                    appData.footer.socialMedia.facebook = footerFacebook.value;
+                    appData.footer.socialMedia.linkedin = footerLinkedin.value;
+                    appData.footer.socialMedia.tiktok = footerTiktok.value;
+                    appData.footer.socialMedia.youtube = footerYoutube.value;
+                    appData.footer.socialMedia.email = footerEmail.value;
+
+                    // Coletar quick links
+                    const quickLinkLabels = document.querySelectorAll('.quick-link-label');
+                    const quickLinkUrls = document.querySelectorAll('.quick-link-url');
+                    appData.footer.quickLinks = [];
+                    quickLinkLabels.forEach((label, idx) => {
+                        const url = quickLinkUrls[idx];
+                        if (label.value && url.value) {
+                            appData.footer.quickLinks.push({ label: label.value, url: url.value });
+                        }
+                    });
+
+                    appData.footer.newsletter.enabled = footerNewsletterEnabled.checked;
+                    appData.footer.newsletter.title = footerNewsletterTitle.value;
+                    appData.footer.newsletter.description = footerNewsletterDesc.value;
+                    appData.footer.copyright = footerCopyright.value;
+                }
+            }
+
+            // Converter para formato compatível com o site público
+            const result = {
+                hero: {
+                    title: appData.hero.title,
+                    subtitle: appData.hero.subtitle,
+                    image: appData.hero.image,
+                    transform: {
+                        scale: appData.hero.imageScale,
+                        posX: appData.hero.imagePosX,
+                        posY: appData.hero.imagePosY
+                    },
+                    titleTransform: {
+                        posX: appData.hero.titlePosX,
+                        posY: appData.hero.titlePosY
+                    },
+                    subtitleTransform: {
+                        posX: appData.hero.subtitlePosX,
+                        posY: appData.hero.subtitlePosY
+                    },
+                    titleFontSize: appData.hero.titleSize,
+                    subtitleFontSize: appData.hero.subtitleSize,
+                    topBarHeight: appData.hero.topBarHeight,
+                    bottomBarHeight: appData.hero.bottomBarHeight,
+                    overlayOpacity: appData.hero.overlayOpacity
+                },
+                about: appData.about,
+                portfolio: appData.portfolio,
+                albums: appData.albums,
+                studio: appData.studio,
+                footer: appData.footer
+            };
+
+            console.log('🔍 buildSaveData - appData.footer:', JSON.stringify(appData.footer, null, 2));
+            console.log('🔍 buildSaveData - result.footer:', JSON.stringify(result.footer, null, 2));
+
+            return result;
+        }
+
+        async function saveDados() {
+            // Verificar se está autenticado
+            if (!authToken) {
+                alert('Você precisa estar logado para salvar alterações');
+                return;
+            }
+
+            if (isSaving) {
+                savePending = true;
+                return;
+            }
+
+            isSaving = true;
+
+            console.log('💾 saveDados() chamado');
+            const saveData = buildSaveData();
+            
+            console.log('📤 Enviando dados para o API:', {
+                studioWhatsapp: saveData.studio?.whatsapp,
+                studioTitle: saveData.studio?.title,
+                aboutTitle: saveData.about?.title,
+                heroTitle: saveData.hero?.title,
+                footerSocialMediaInstagram: saveData.footer?.socialMedia?.instagram,
+                footerQuickLinksCount: saveData.footer?.quickLinks?.length,
+                footerCopyright: saveData.footer?.copyright
+            });
+
+            try {
+                // Salvar Hero em JSON local
+                const heroResponse = await fetch('/api/hero', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify(saveData.hero)
+                });
+
+                if (!heroResponse.ok) {
+                    console.warn('⚠️  Erro ao salvar hero:', heroResponse.status);
+                }
+
+                // Enviar demais dados com token JWT no header
+                const response = await fetch('/api/site-data', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify(saveData)
+                });
+
+                if (!response.ok) {
+                    if (response.status === 401 || response.status === 403) {
+                        forceLogout('Sessão inválida. Faça login novamente.');
+                        return;
+                    }
+                    const error = await response.json();
+                    throw new Error(error.error || 'Erro ao salvar dados');
+                }
+
+                const data = await response.json();
+                console.log('✅ Resposta do API:', data);
+                console.log('✅ Footer retornado:', data.footer);
+            } catch (err) {
+                console.error('❌ Erro ao salvar:', err);
+                alert('Não foi possível salvar os dados: ' + err.message);
+                return;
+            } finally {
+                isSaving = false;
+                if (savePending) {
+                    savePending = false;
+                    setTimeout(() => saveDados(), 0);
+                }
+            }
+
+                console.log('✅ Dados salvos com sucesso!');
+        }
+
+        async function loadDados() {
+            try {
+                const loaded = await api.getSiteData();
+                const payload = loaded?.data && typeof loaded.data === 'object' ? loaded.data : loaded;
+                if (payload) {
+
+                    // Converter do formato do site para o formato do admin
+                    if (payload.hero) {
+                        appData.hero = {
+                            title: payload.hero.title ?? '',
+                            subtitle: payload.hero.subtitle ?? '',
+                            image: payload.hero.image ?? '',
+                            imageScale: payload.hero.transform?.scale ?? 1,
+                            imagePosX: payload.hero.transform?.posX ?? 50,
+                            imagePosY: payload.hero.transform?.posY ?? 50,
+                            titlePosX: payload.hero.titleTransform?.posX ?? 50,
+                            titlePosY: payload.hero.titleTransform?.posY ?? 40,
+                            subtitlePosX: payload.hero.subtitleTransform?.posX ?? 50,
+                            subtitlePosY: payload.hero.subtitleTransform?.posY ?? 55,
+                            titleSize: payload.hero.titleFontSize ?? 48,
+                            subtitleSize: payload.hero.subtitleFontSize ?? 18,
+                            topBarHeight: payload.hero.topBarHeight ?? 0,
+                            bottomBarHeight: payload.hero.bottomBarHeight ?? 0,
+                            overlayOpacity: payload.hero.overlayOpacity ?? 30
+                        };
+                    }
+
+                    if (payload.about) {
+                        appData.about = {
+                            title: payload.about.title ?? '',
+                            text: payload.about.text ?? '',
+                            image: payload.about.image ?? ''
+                        };
+                    }
+
+                    if (payload.portfolio) {
+                        appData.portfolio = payload.portfolio;
+                    }
+
+                    if (payload.albums) {
+                        appData.albums = payload.albums;
+                    }
+
+                    if (payload.studio) {
+                        appData.studio = {
+                            title: payload.studio.title ?? '',
+                            description: payload.studio.description ?? '',
+                            address: payload.studio.address ?? '',
+                            hours: payload.studio.hours ?? '',
+                            whatsapp: payload.studio.whatsapp ?? '',
+                            whatsappMessages: payload.studio.whatsappMessages ?? [],
+                            photos: payload.studio.photos ?? []
+                        };
+                        // Migrar formato antigo (whatsappGreeting) para novo (whatsappMessages)
+                        if (!payload.studio.whatsappMessages && payload.studio.whatsappGreeting) {
+                            appData.studio.whatsappMessages = [{ text: payload.studio.whatsappGreeting, delay: 5 }];
+                        }
+                        // Migrar formato antigo (img1, img2) para novo (photos)
+                        if (!payload.studio.photos && (payload.studio.img1 || payload.studio.img2)) {
+                            appData.studio.photos = [
+                                { image: payload.studio.img1 || '', posX: 50, posY: 50, scale: 1 },
+                                { image: payload.studio.img2 || '', posX: 50, posY: 50, scale: 1 }
+                            ];
+                        }
+                    }
+
+                    if (payload.footer) {
+                        appData.footer = {
+                            socialMedia: payload.footer.socialMedia || { instagram: '', facebook: '', linkedin: '', tiktok: '', youtube: '', email: '' },
+                            quickLinks: payload.footer.quickLinks || [],
+                            newsletter: payload.footer.newsletter || { enabled: true, title: '', description: '' },
+                            copyright: payload.footer.copyright || ''
+                        };
+                    }
+                }
+            } catch (e) {
+                console.warn('Erro ao carregar dados:', e);
+            }
+        }
+
+        // ========== SESSÕES ==========
+        async function renderSessoes() {
+            const contentArea = document.getElementById('content-area');
+            contentArea.innerHTML = '<div class="flex items-center justify-center h-64"><div class="text-gray-500">Carregando...</div></div>';
+            
+            try {
+                const response = await fetch('/api/sessions', {
+                    headers: { 'Authorization': 'Bearer ' + authToken }
+                });
+                
+                if (!response.ok) throw new Error('Erro ao carregar sessões');
+                
+                const result = await response.json();
+                const sessions = result.sessions || [];
+                
+                const html = `
+                    <div class="max-w-6xl mx-auto space-y-6">
+                        <!-- Botão Nova Sessão -->
+                        <div class="flex justify-between items-center">
+                            <h2 class="text-lg font-semibold text-gray-900">Gerenciar Sessões de Clientes</h2>
+                            <button onclick="createNewSession()" class="bg-neutral-900 text-white px-6 py-2 rounded-lg font-semibold hover:bg-gray-800 transition-colors flex items-center gap-2">
+                                <i data-lucide="plus" class="w-4 h-4"></i>
+                                Nova Sessão
+                            </button>
+                        </div>
+
+                        <!-- Lista de Sessões -->
+                        <div class="bg-white rounded-xl border border-gray-200 shadow-sm">
+                            ${sessions.length === 0 ? `
+                                <div class="p-12 text-center text-gray-500">
+                                    <i data-lucide="photo" class="w-12 h-12 mx-auto mb-3 text-gray-300"></i>
+                                    <p>Nenhuma sessão criada ainda</p>
+                                    <button onclick="createNewSession()" class="mt-4 px-4 py-2 bg-neutral-900 text-white rounded-lg font-medium hover:bg-gray-800">
+                                        Criar Primeira Sessão
+                                    </button>
+                                </div>
+                            ` : `
+                                <div class="overflow-x-auto">
+                                    <table class="w-full">
+                                        <thead class="bg-gray-50 border-b border-gray-200">
+                                            <tr>
+                                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cliente</th>
+                                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tipo</th>
+                                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Data</th>
+                                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fotos</th>
+                                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Código</th>
+                                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Ações</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="divide-y divide-gray-200">
+                                            ${sessions.map(session => `
+                                                <tr class="hover:bg-gray-50">
+                                                    <td class="px-6 py-4 text-sm font-medium text-gray-900">${session.name}</td>
+                                                    <td class="px-6 py-4 text-sm text-gray-500">${session.type}</td>
+                                                    <td class="px-6 py-4 text-sm text-gray-500">${new Date(session.date).toLocaleDateString('pt-BR')}</td>
+                                                    <td class="px-6 py-4 text-sm font-medium text-gray-900">${session.photos.length}</td>
+                                                    <td class="px-6 py-4 text-sm font-mono bg-gray-50 rounded px-2 py-1">
+                                                        <span class="text-gray-900 font-bold">${session.accessCode}</span>
+                                                        <button onclick="copyToClipboard('${session.accessCode}')" class="ml-2 text-gray-400 hover:text-gray-600">
+                                                            <i data-lucide="copy" class="w-4 h-4"></i>
+                                                        </button>
+                                                    </td>
+                                                    <td class="px-6 py-4 text-right text-sm space-x-2">
+                                                        <button onclick="editSession('${session.id}')" class="text-blue-600 hover:text-blue-800 font-medium">Editar</button>
+                                                        <button onclick="deleteSession('${session.id}')" class="text-red-600 hover:text-red-800 font-medium">Deletar</button>
+                                                    </td>
+                                                </tr>
+                                            `).join('')}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            `}
+                        </div>
+                    </div>
+                `;
+                
+                contentArea.innerHTML = html;
+                lucide.createIcons();
+            } catch (error) {
+                console.error('Erro:', error);
+                contentArea.innerHTML = '<div class="p-6 text-red-600">Erro ao carregar sessões</div>';
+            }
+        }
+
+        async function createNewSession() {
+            const name = prompt('Nome do cliente/sessão:');
+            if (!name || name.trim() === '') {
+                alert('Nome é obrigatório');
+                return;
+            }
+            
+            const type = prompt('Tipo de sessão (ex: Família, Casamento, Evento):');
+            if (!type || type.trim() === '') {
+                alert('Tipo é obrigatório');
+                return;
+            }
+            
+            const dateStr = prompt('Data (DD-MM-AAAA):');
+            if (!dateStr || dateStr.trim() === '') {
+                alert('Data é obrigatória');
+                return;
+            }
+
+            try {
+                // Converter DD-MM-AAAA para YYYY-MM-DD
+                const [day, month, year] = dateStr.split('-');
+                if (!day || !month || !year || day.length !== 2 || month.length !== 2 || year.length !== 4) {
+                    alert('Formato de data inválido. Use DD-MM-AAAA');
+                    return;
+                }
+                
+                const isoDate = `${year}-${month}-${day}`;
+                const dateObj = new Date(isoDate);
+                
+                if (isNaN(dateObj.getTime())) {
+                    alert('Data inválida');
+                    return;
+                }
+
+                const response = await fetch('/api/sessions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + authToken
+                    },
+                    body: JSON.stringify({
+                        name: name.trim(),
+                        type: type.trim(),
+                        date: isoDate
+                    })
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Erro ao criar sessão');
+                }
+
+                const result = await response.json();
+                alert('✅ Sessão criada!\n\nNome: ' + result.session.name + '\nCódigo: ' + result.session.accessCode);
+                renderSessoes();
+            } catch (error) {
+                alert('❌ Erro: ' + error.message);
+            }
+        }
+
+        async function deleteSession(sessionId) {
+            if (!confirm('Tem certeza que quer deletar esta sessão?')) return;
+
+            try {
+                const response = await fetch(`/api/sessions/${sessionId}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': 'Bearer ' + authToken }
+                });
+
+                if (!response.ok) throw new Error('Erro ao deletar');
+
+                alert('Sessão deletada!');
+                renderSessoes();
+            } catch (error) {
+                alert('Erro: ' + error.message);
+            }
+        }
+
+        async function editSession(sessionId) {
+            console.log('🔧 editSession chamado com sessionId:', sessionId);
+            // TODO: Implementar modal de edição completo
+            // Por enquanto, só permitir fazer upload de fotos
+            const action = prompt('O que deseja fazer?\n1 - Ver fotos\n2 - Upload de fotos\n3 - Cancelar');
+            console.log('🔧 Ação escolhida:', action);
+            
+            if (action === '1') {
+                window.open(`/galeria/${sessionId}`, '_blank');
+            } else if (action === '2') {
+                console.log('🔧 Criando input de arquivo...');
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.multiple = true;
+                input.accept = 'image/*';
+                input.onchange = async (e) => {
+                    console.log('🔧 Evento onchange disparado!');
+                    const files = Array.from(e.target.files);
+                    console.log('🔧 Arquivos selecionados:', files.length);
+                    if (files.length === 0) {
+                        console.log('🔧 Nenhum arquivo selecionado, abortando');
+                        return;
+                    }
+                    
+                    try {
+                        // Enviar 1 foto por vez para respeitar limite de 4.5MB do Vercel
+                        const batchSize = 1;
+                        let totalUploaded = 0;
+                        
+                        for (let i = 0; i < files.length; i += batchSize) {
+                            const batch = files.slice(i, i + batchSize);
+                            const formData = new FormData();
+                            batch.forEach(file => formData.append('photos', file));
+                            
+                            console.log('Enviando lote:', i/batchSize + 1, 'com', batch.length, 'fotos');
+                            
+                            const response = await fetch(`/api/sessions/${sessionId}/photos`, {
+                                method: 'POST',
+                                headers: { 'Authorization': 'Bearer ' + authToken },
+                                body: formData
+                            });
+                            
+                            console.log('Status da resposta:', response.status);
+                            
+                            if (!response.ok) {
+                                const contentType = response.headers.get('content-type');
+                                let errorMessage;
+                                
+                                if (contentType && contentType.includes('application/json')) {
+                                    const errorData = await response.json();
+                                    console.error('Erro JSON:', errorData);
+                                    errorMessage = errorData.details || errorData.error;
+                                } else {
+                                    const textError = await response.text();
+                                    console.error('Erro texto:', textError);
+                                    errorMessage = textError.substring(0, 200);
+                                }
+                                
+                                throw new Error(errorMessage || `Erro no lote ${Math.floor(i/batchSize) + 1}`);
+                            }
+                            
+                            const result = await response.json();
+                            totalUploaded += result.photos.length;
+                            
+                            if (result.errors && result.errors.length > 0) {
+                                console.warn('Avisos no upload:', result.errors);
+                            }
+                        }
+                        
+                        alert(`✅ ${totalUploaded} foto(s) adicionada(s)!`);
+                        renderSessoes();
+                    } catch (error) {
+                        console.error('Erro completo:', error);
+                        alert('❌ Erro ao fazer upload: ' + error.message);
+                    }
+                };
+                input.click();
+            }
+        }
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text);
+            alert('Código copiado!');
+        }
+
+        function resetToDefaults() {
+            if (confirm('Isso irá resetar todas as configurações para o padrão. Continuar?')) {
+                appData = JSON.parse(JSON.stringify(defaultData));
+                switchTab(currentTab);
+            }
+        }
+
+        window.addEventListener('load', () => {
+            lucide.createIcons();
+            checkToken(); // Verificar se há sessão salva
+        });
+
+    </script>
+</body>
+</html>

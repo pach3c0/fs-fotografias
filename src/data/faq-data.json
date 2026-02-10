@@ -1,0 +1,39 @@
+{
+  "faqs": [
+    {
+      "id": "onde-estamos",
+      "question": "ONDE ESTAMOS:",
+      "answer": "Rua Exemplo, 123 - Bairro - Cidade/UF"
+    },
+    {
+      "id": "agendamento",
+      "question": "AGENDAMENTO",
+      "answer": "Agende seu ensaio com pelo menos 20 dias de antecedência para garantir a melhor disponibilidade."
+    },
+    {
+      "id": "confirmacao",
+      "question": "CONFIRMAÇÃO",
+      "answer": "A confirmação ocorre mediante pagamento."
+    },
+    {
+      "id": "hora-extra",
+      "question": "HORA EXTRA",
+      "answer": "Caso precise de hora extra, 50% do valor da sessão hora. (porém precisamos de nos organizar com antecedência)\n\nSomos rigorosos com horário."
+    },
+    {
+      "id": "reagendamento",
+      "question": "REAGENDAMENTO",
+      "answer": "O reagendamento pode ser feito com no mínimo 72 horas de antecedência, se for comunicado em um prazo menor será cobrado de 30% novamente."
+    },
+    {
+      "id": "prazos",
+      "question": "PRAZOS",
+      "answer": "**FOTOS**\n\nO envio das fotos será através de um link para seleção, **enviamos até em 48 horas úteis** após a sessão das fotos.\n\nApós selecionadas enviaremos um link com todas as fotos editadas em alta resolução após **72 horas úteis.**\n\nAs imagens ficarão disponíveis para download por 07 dias, faça o download dentro do prazo, assim que finalizado o prazo, as imagens serão deletadas automaticamente.\n\nO processo de download é rápido, coloque como prioridade.\n\nA solicitação de reenvio do link poderá ser feito, no entanto todo processo terá que ser realizado novamente pois como mencionado acima, os mesmos são deletados automaticamente assim que completados de 07 dias de envio, sendo assim, é gerado do custo de R$ 149,90 por vez que solicitar o reenvio das imagens para download."
+    },
+    {
+      "id": "posso-ficar-com-fotos-sem-edicao",
+      "question": "POSSO FICAR COM AS FOTOS SEM EDIÇÃO?",
+      "answer": "Não, entregamos somente as fotos selecionadas e editadas"
+    }
+  ]
+}
