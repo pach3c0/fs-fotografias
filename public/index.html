@@ -21,7 +21,7 @@
 
         /* Smooth transitions */
         .hero-image {
-            transition: transform 0.3s ease, object-position 0.3s ease;
+            transition: background-size 0.3s ease, background-position 0.3s ease;
         }
 
         /* WhatsApp Widget Animations */
@@ -222,9 +222,10 @@
 
     <!-- HERO SECTION -->
     <section id="hero" class="hero-section relative flex items-center overflow-hidden bg-black">
-        <!-- Imagem de fundo (sem src default - carregada via JS) -->
-        <img id="dom-hero-img" src="" alt="Hero"
-            class="hero-image absolute inset-0 w-full h-full object-cover opacity-0 transition-opacity duration-500" />
+        <!-- Imagem de fundo (background-image para zoom+posicao corretos) -->
+        <div id="dom-hero-img"
+            class="hero-image absolute inset-0 w-full h-full opacity-0 transition-opacity duration-500"
+            style="background-repeat:no-repeat;"></div>
 
         <!-- Overlay escuro -->
         <div id="dom-hero-overlay" class="absolute inset-0"></div>

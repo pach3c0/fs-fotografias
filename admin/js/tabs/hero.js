@@ -258,7 +258,8 @@ export async function renderHero(container) {
     const topBar = parseInt(topBarInput.value);
     const bottomBar = parseInt(bottomBarInput.value);
 
-    const imgHtml = image ? `<img src="${resolveImagePath(image)}" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:${px}% ${py}%; transform:scale(${scale}); transform-origin:${px}% ${py}%;">` : '';
+    const scalePct = scale * 100;
+    const imgHtml = image ? `<div style="position:absolute; inset:0; background-image:url('${resolveImagePath(image)}'); background-repeat:no-repeat; background-size:max(${scalePct}%, 100%) max(${scalePct}%, 100%); background-position:${px}% ${py}%;"></div>` : '';
 
     preview.innerHTML = `
       ${imgHtml}

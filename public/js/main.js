@@ -94,20 +94,24 @@ function render() {
     const heroTitle = document.getElementById('dom-hero-title');
     const heroSubtitle = document.getElementById('dom-hero-subtitle');
 
-    // Imagem
+    // Imagem - usa background-size + background-position para zoom+posicao corretos
     const heroImageUrl = resolveImagePath(store.hero.image || store.hero.bgImage);
     const imgScale = store.hero.imageScale ?? (store.hero.transform?.scale ?? 1);
     const imgPosX = store.hero.imagePosX ?? (store.hero.transform?.posX ?? 50);
     const imgPosY = store.hero.imagePosY ?? (store.hero.transform?.posY ?? 50);
 
-    heroImg.style.transform = `scale(${imgScale})`;
-    heroImg.style.transformOrigin = `${imgPosX}% ${imgPosY}%`;
-    heroImg.style.objectPosition = `${imgPosX}% ${imgPosY}%`;
+    const scalePct = imgScale * 100;
+    heroImg.style.backgroundSize = `max(${scalePct}%, 100%) max(${scalePct}%, 100%)`;
+    heroImg.style.backgroundPosition = `${imgPosX}% ${imgPosY}%`;
 
     // Carrega imagem e mostra com fade-in quando pronta
-    if (heroImg.src !== heroImageUrl) {
-        heroImg.onload = () => heroImg.classList.remove('opacity-0');
-        heroImg.src = heroImageUrl;
+    if (heroImg.style.backgroundImage !== `url("${heroImageUrl}")`) {
+        const preload = new Image();
+        preload.onload = () => {
+            heroImg.style.backgroundImage = `url("${heroImageUrl}")`;
+            heroImg.classList.remove('opacity-0');
+        };
+        preload.src = heroImageUrl;
     }
 
     // Overlay
