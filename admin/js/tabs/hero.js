@@ -155,7 +155,7 @@ export async function renderHero(container) {
       </button>
 
       <!-- Preview -->
-      <div id="heroPreview" style="border:1px solid #374151; border-radius:0.75rem; width:100%; background:#000; overflow:hidden; position:relative; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); container-type: inline-size; transition: aspect-ratio 0.2s ease;">
+      <div id="heroPreview" style="border:1px solid #374151; border-radius:0.75rem; width:100%; background:#000; overflow:hidden; position:relative; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); container-type: inline-size; transition: aspect-ratio 0.2s ease; box-sizing: border-box;">
         <p style="text-align:center; color:#9ca3af; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);">Carregando Preview...</p>
       </div>
     </div>
@@ -269,6 +269,16 @@ export async function renderHero(container) {
     const bottomBar = parseInt(bottomBarInput.value);
 
     const scalePct = scale * 100;
+    
+    // Para um espelho perfeito, convertemos os limites de PX do site para unidades relativas ao container (CQW)
+    // Assumindo uma tela de referência de 1920px:
+    // 28px (min title) = 1.45cqw | 14px (min sub) = 0.73cqw
+    // 800px (max-width title) = 41.6cqw | 600px (max-width sub) = 31.25cqw
+    const titleMaxW = (800 / 1920) * 100;
+    const subMaxW = (600 / 1920) * 100;
+    const titleFontSizeCqw = (tfs / 1920) * 100;
+    const subFontSizeCqw = (sfs / 1920) * 100;
+
     const imgHtml = image ? `<div style="position:absolute; inset:0; background-image:url('${resolveImagePath(image)}'); background-repeat:no-repeat; background-size:max(${scalePct}%, 100%) max(${scalePct}%, 100%); background-position:${px}% ${py}%;"></div>` : '';
 
     preview.innerHTML = `
@@ -276,8 +286,8 @@ export async function renderHero(container) {
       <div style="position:absolute; inset:0; background:rgba(0,0,0,${overlay/100});"></div>
       <div style="position:absolute; top:0; left:0; right:0; height:${topBar}%; background:#000; z-index:2;"></div>
       <div style="position:absolute; bottom:0; left:0; right:0; height:${bottomBar}%; background:#000; z-index:2;"></div>
-      <h1 style="position:absolute; left:${tpx}%; top:${tpy}%; transform:translate(-50%,-50%); color:white; font-family:'Playfair Display',serif; font-size:clamp(14px, 6cqw, ${tfs}px); font-weight:bold; text-align:center; text-shadow:2px 2px 4px rgba(0,0,0,0.7); z-index:3; line-height:1.15; width:90%; max-width:800px; white-space:normal; pointer-events:none;">${titleInput.value || ''}</h1>
-      <p style="position:absolute; left:${spx}%; top:${spy}%; transform:translate(-50%,-50%); color:#e5e7eb; font-size:clamp(10px, 3.5cqw, ${sfs}px); text-align:center; text-shadow:1px 1px 2px rgba(0,0,0,0.7); z-index:3; line-height:1.6; width:80%; max-width:600px; white-space:normal; pointer-events:none;">${subtitleInput.value || ''}</p>
+      <h1 style="position:absolute; left:${tpx}%; top:${tpy}%; transform:translate(-50%,-50%); color:white; font-family:'Playfair Display',serif; font-size:clamp(1.45cqw, 6cqw, ${titleFontSizeCqw}cqw); font-weight:bold; text-align:center; text-shadow:2px 2px 4px rgba(0,0,0,0.7); z-index:3; line-height:1.15; width:90%; max-width:${titleMaxW}cqw; white-space:normal; pointer-events:none;">${titleInput.value || ''}</h1>
+      <p style="position:absolute; left:${spx}%; top:${spy}%; transform:translate(-50%,-50%); color:#e5e7eb; font-size:clamp(0.73cqw, 3.5cqw, ${subFontSizeCqw}cqw); text-align:center; text-shadow:1px 1px 2px rgba(0,0,0,0.7); z-index:3; line-height:1.6; width:80%; max-width:${subMaxW}cqw; white-space:normal; pointer-events:none;">${subtitleInput.value || ''}</p>
     `;
   }
 
