@@ -16,10 +16,14 @@ function processRemoteData(remote) {
             hero: {
                 title: remote.hero?.title ?? "",
                 subtitle: remote.hero?.subtitle ?? "",
-                bgImage: remote.hero?.image ?? "",
-                transform: remote.hero?.transform ?? { scale: 1, posX: 50, posY: 50 },
-                titleTransform: remote.hero?.titleTransform ?? { posX: 50, posY: 40 },
-                subtitleTransform: remote.hero?.subtitleTransform ?? { posX: 50, posY: 55 },
+                image: remote.hero?.image ?? "",
+                imageScale: remote.hero?.imageScale ?? 1,
+                imagePosX: remote.hero?.imagePosX ?? 50,
+                imagePosY: remote.hero?.imagePosY ?? 50,
+                titlePosX: remote.hero?.titlePosX ?? 50,
+                titlePosY: remote.hero?.titlePosY ?? 40,
+                subtitlePosX: remote.hero?.subtitlePosX ?? 50,
+                subtitlePosY: remote.hero?.subtitlePosY ?? 55,
                 titleFontSize: remote.hero?.titleFontSize ?? 48,
                 subtitleFontSize: remote.hero?.subtitleFontSize ?? 18,
                 topBarHeight: remote.hero?.topBarHeight ?? 0,
@@ -95,10 +99,10 @@ function render() {
     const heroSubtitle = document.getElementById('dom-hero-subtitle');
 
     // Imagem - usa background-size + background-position para zoom+posicao corretos
-    const heroImageUrl = resolveImagePath(store.hero.image || store.hero.bgImage);
-    const imgScale = store.hero.imageScale ?? (store.hero.transform?.scale ?? 1);
-    const imgPosX = store.hero.imagePosX ?? (store.hero.transform?.posX ?? 50);
-    const imgPosY = store.hero.imagePosY ?? (store.hero.transform?.posY ?? 50);
+    const heroImageUrl = resolveImagePath(store.hero.image);
+    const imgScale = store.hero.imageScale;
+    const imgPosX = store.hero.imagePosX;
+    const imgPosY = store.hero.imagePosY;
 
     const scalePct = imgScale * 100;
     heroImg.style.backgroundSize = `max(${scalePct}%, 100%) max(${scalePct}%, 100%)`;
@@ -123,8 +127,8 @@ function render() {
     heroBottomBar.style.height = (store.hero.bottomBarHeight ?? 0) + '%';
 
     // Titulo
-    const titlePosX = store.hero.titlePosX ?? (store.hero.titleTransform?.posX ?? 50);
-    const titlePosY = store.hero.titlePosY ?? (store.hero.titleTransform?.posY ?? 40);
+    const titlePosX = store.hero.titlePosX;
+    const titlePosY = store.hero.titlePosY;
     const titleFS = store.hero.titleFontSize ?? 48;
 
     heroTitle.textContent = store.hero.title;
@@ -136,8 +140,8 @@ function render() {
     heroTitle.style.maxWidth = 'min(90vw, 800px)';
 
     // Subtitulo
-    const subPosX = store.hero.subtitlePosX ?? (store.hero.subtitleTransform?.posX ?? 50);
-    const subPosY = store.hero.subtitlePosY ?? (store.hero.subtitleTransform?.posY ?? 55);
+    const subPosX = store.hero.subtitlePosX;
+    const subPosY = store.hero.subtitlePosY;
     const subtitleFS = store.hero.subtitleFontSize ?? 18;
 
     heroSubtitle.textContent = store.hero.subtitle;

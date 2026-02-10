@@ -45,22 +45,22 @@ export async function renderHero(container) {
           <div>
             <label style="display:block; font-size:0.75rem; font-weight:600; color:#9ca3af; text-transform:uppercase; margin-bottom:0.25rem;">Zoom</label>
             <div style="display:flex; align-items:center; gap:0.5rem;">
-              <input type="range" id="heroScale" min="0.5" max="2" step="0.05" value="${hero.imageScale ?? (hero.transform?.scale ?? 1)}" style="flex:1;">
-              <span id="scaleValue" style="font-size:0.875rem; font-family:monospace; color:#f3f4f6; min-width:3rem; text-align:right;">${(hero.imageScale ?? (hero.transform?.scale ?? 1))}x</span>
+              <input type="range" id="heroScale" min="0.5" max="2" step="0.05" value="${hero.imageScale ?? 1}" style="flex:1;">
+              <span id="scaleValue" style="font-size:0.875rem; font-family:monospace; color:#f3f4f6; min-width:3rem; text-align:right;">${(hero.imageScale ?? 1)}x</span>
             </div>
           </div>
           <div>
             <label style="display:block; font-size:0.75rem; font-weight:600; color:#9ca3af; text-transform:uppercase; margin-bottom:0.25rem;">Posicao X</label>
             <div style="display:flex; align-items:center; gap:0.5rem;">
-              <input type="range" id="heroPosX" min="0" max="100" step="1" value="${hero.imagePosX ?? (hero.transform?.posX ?? 50)}" style="flex:1;">
-              <span id="posXValue" style="font-size:0.875rem; font-family:monospace; color:#f3f4f6; min-width:3rem; text-align:right;">${hero.imagePosX ?? (hero.transform?.posX ?? 50)}%</span>
+              <input type="range" id="heroPosX" min="0" max="100" step="1" value="${hero.imagePosX ?? 50}" style="flex:1;">
+              <span id="posXValue" style="font-size:0.875rem; font-family:monospace; color:#f3f4f6; min-width:3rem; text-align:right;">${hero.imagePosX ?? 50}%</span>
             </div>
           </div>
           <div>
             <label style="display:block; font-size:0.75rem; font-weight:600; color:#9ca3af; text-transform:uppercase; margin-bottom:0.25rem;">Posicao Y</label>
             <div style="display:flex; align-items:center; gap:0.5rem;">
-              <input type="range" id="heroPosY" min="0" max="100" step="1" value="${hero.imagePosY ?? (hero.transform?.posY ?? 50)}" style="flex:1;">
-              <span id="posYValue" style="font-size:0.875rem; font-family:monospace; color:#f3f4f6; min-width:3rem; text-align:right;">${hero.imagePosY ?? (hero.transform?.posY ?? 50)}%</span>
+              <input type="range" id="heroPosY" min="0" max="100" step="1" value="${hero.imagePosY ?? 50}" style="flex:1;">
+              <span id="posYValue" style="font-size:0.875rem; font-family:monospace; color:#f3f4f6; min-width:3rem; text-align:right;">${hero.imagePosY ?? 50}%</span>
             </div>
           </div>
         </div>
@@ -73,15 +73,15 @@ export async function renderHero(container) {
           <div>
             <label style="display:block; font-size:0.75rem; font-weight:600; color:#9ca3af; text-transform:uppercase; margin-bottom:0.25rem;">Posicao X</label>
             <div style="display:flex; align-items:center; gap:0.5rem;">
-              <input type="range" id="titlePosX" min="0" max="100" step="1" value="${hero.titlePosX ?? (hero.titleTransform?.posX ?? 50)}" style="flex:1;">
-              <span id="titlePosXVal" style="font-size:0.875rem; font-family:monospace; color:#f3f4f6; min-width:3rem; text-align:right;">${hero.titlePosX ?? (hero.titleTransform?.posX ?? 50)}%</span>
+              <input type="range" id="titlePosX" min="0" max="100" step="1" value="${hero.titlePosX ?? 50}" style="flex:1;">
+              <span id="titlePosXVal" style="font-size:0.875rem; font-family:monospace; color:#f3f4f6; min-width:3rem; text-align:right;">${hero.titlePosX ?? 50}%</span>
             </div>
           </div>
           <div>
             <label style="display:block; font-size:0.75rem; font-weight:600; color:#9ca3af; text-transform:uppercase; margin-bottom:0.25rem;">Posicao Y</label>
             <div style="display:flex; align-items:center; gap:0.5rem;">
-              <input type="range" id="titlePosY" min="0" max="100" step="1" value="${hero.titlePosY ?? (hero.titleTransform?.posY ?? 40)}" style="flex:1;">
-              <span id="titlePosYVal" style="font-size:0.875rem; font-family:monospace; color:#f3f4f6; min-width:3rem; text-align:right;">${hero.titlePosY ?? (hero.titleTransform?.posY ?? 40)}%</span>
+              <input type="range" id="titlePosY" min="0" max="100" step="1" value="${hero.titlePosY ?? 40}" style="flex:1;">
+              <span id="titlePosYVal" style="font-size:0.875rem; font-family:monospace; color:#f3f4f6; min-width:3rem; text-align:right;">${hero.titlePosY ?? 40}%</span>
             </div>
           </div>
           <div>
@@ -101,15 +101,15 @@ export async function renderHero(container) {
           <div>
             <label style="display:block; font-size:0.75rem; font-weight:600; color:#9ca3af; text-transform:uppercase; margin-bottom:0.25rem;">Posicao X</label>
             <div style="display:flex; align-items:center; gap:0.5rem;">
-              <input type="range" id="subtitlePosX" min="0" max="100" step="1" value="${hero.subtitlePosX ?? (hero.subtitleTransform?.posX ?? 50)}" style="flex:1;">
-              <span id="subtitlePosXVal" style="font-size:0.875rem; font-family:monospace; color:#f3f4f6; min-width:3rem; text-align:right;">${hero.subtitlePosX ?? (hero.subtitleTransform?.posX ?? 50)}%</span>
+              <input type="range" id="subtitlePosX" min="0" max="100" step="1" value="${hero.subtitlePosX ?? 50}" style="flex:1;">
+              <span id="subtitlePosXVal" style="font-size:0.875rem; font-family:monospace; color:#f3f4f6; min-width:3rem; text-align:right;">${hero.subtitlePosX ?? 50}%</span>
             </div>
           </div>
           <div>
             <label style="display:block; font-size:0.75rem; font-weight:600; color:#9ca3af; text-transform:uppercase; margin-bottom:0.25rem;">Posicao Y</label>
             <div style="display:flex; align-items:center; gap:0.5rem;">
-              <input type="range" id="subtitlePosY" min="0" max="100" step="1" value="${hero.subtitlePosY ?? (hero.subtitleTransform?.posY ?? 55)}" style="flex:1;">
-              <span id="subtitlePosYVal" style="font-size:0.875rem; font-family:monospace; color:#f3f4f6; min-width:3rem; text-align:right;">${hero.subtitlePosY ?? (hero.subtitleTransform?.posY ?? 55)}%</span>
+              <input type="range" id="subtitlePosY" min="0" max="100" step="1" value="${hero.subtitlePosY ?? 55}" style="flex:1;">
+              <span id="subtitlePosYVal" style="font-size:0.875rem; font-family:monospace; color:#f3f4f6; min-width:3rem; text-align:right;">${hero.subtitlePosY ?? 55}%</span>
             </div>
           </div>
           <div>
@@ -155,8 +155,8 @@ export async function renderHero(container) {
       </button>
 
       <!-- Preview -->
-      <div id="heroPreview" style="border:1px solid #374151; border-radius:0.75rem; height:20rem; background:#000; overflow:hidden; position:relative;">
-        <p style="text-align:center; color:#9ca3af; padding-top:9rem;">Preview</p>
+      <div id="heroPreview" style="border:1px solid #374151; border-radius:0.75rem; width:100%; aspect-ratio:16/9; background:#000; overflow:hidden; position:relative; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); container-type: inline-size;">
+        <p style="text-align:center; color:#9ca3af; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);">Carregando Preview...</p>
       </div>
     </div>
   `;
@@ -266,8 +266,8 @@ export async function renderHero(container) {
       <div style="position:absolute; inset:0; background:rgba(0,0,0,${overlay/100});"></div>
       <div style="position:absolute; top:0; left:0; right:0; height:${topBar}%; background:#000; z-index:2;"></div>
       <div style="position:absolute; bottom:0; left:0; right:0; height:${bottomBar}%; background:#000; z-index:2;"></div>
-      <h1 style="position:absolute; left:${tpx}%; top:${tpy}%; transform:translate(-50%,-50%); color:white; font-family:'Playfair Display',serif; font-size:clamp(28px, 6vw, ${tfs}px); font-weight:bold; text-align:center; text-shadow:2px 2px 4px rgba(0,0,0,0.7); z-index:3; line-height:1.15; max-width:min(90vw, 800px); white-space:normal;">${titleInput.value || ''}</h1>
-      <p style="position:absolute; left:${spx}%; top:${spy}%; transform:translate(-50%,-50%); color:#e5e7eb; font-size:clamp(14px, 3.5vw, ${sfs}px); text-align:center; text-shadow:1px 1px 2px rgba(0,0,0,0.7); z-index:3; line-height:1.6; max-width:min(90vw, 600px); white-space:normal;">${subtitleInput.value || ''}</p>
+      <h1 style="position:absolute; left:${tpx}%; top:${tpy}%; transform:translate(-50%,-50%); color:white; font-family:'Playfair Display',serif; font-size:clamp(12px, 6cqw, ${tfs}px); font-weight:bold; text-align:center; text-shadow:2px 2px 4px rgba(0,0,0,0.7); z-index:3; line-height:1.15; width:90%; white-space:normal; pointer-events:none;">${titleInput.value || ''}</h1>
+      <p style="position:absolute; left:${spx}%; top:${spy}%; transform:translate(-50%,-50%); color:#e5e7eb; font-size:clamp(8px, 3.5cqw, ${sfs}px); text-align:center; text-shadow:1px 1px 2px rgba(0,0,0,0.7); z-index:3; line-height:1.6; width:80%; white-space:normal; pointer-events:none;">${subtitleInput.value || ''}</p>
     `;
   }
 
