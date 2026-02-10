@@ -51,12 +51,10 @@ export async function saveAppData(section, data, silent = false) {
 
     const result = await response.json();
 
-    // Sincronizar estado local com dados do servidor
-    if (result.data) {
-      appState.appData = result.data;
-    } else {
-      appState.appData[section] = data;
-    }
+    // Sincronizar estado local: atualizar apenas a secao salva
+    // NAO substituir appState.appData inteiro para evitar invalidar
+    // referencias locais que as tabs mantem aos dados
+    appState.appData[section] = data;
 
     if (!silent) {
       alert('Salvo com sucesso!');

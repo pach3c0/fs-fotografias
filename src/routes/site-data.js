@@ -36,7 +36,7 @@ router.get('/site-config', async (req, res) => {
 router.put('/site-data', authenticateToken, async (req, res) => {
   try {
     // Protecao: nao sobrescrever com payload vazio ou sem secoes validas
-    const secoes = ['hero', 'about', 'portfolio', 'albums', 'studio', 'faq', 'footer', 'maintenance'];
+    const secoes = ['hero', 'about', 'portfolio', 'albums', 'studio', 'faq', 'footer', 'maintenance', 'integracoes'];
     const temDados = secoes.some(s => req.body[s] !== undefined);
     if (!temDados) {
       return res.status(400).json({ ok: false, error: 'Payload vazio ou invalido' });
