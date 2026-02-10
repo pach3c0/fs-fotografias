@@ -91,6 +91,18 @@ export async function renderSobre(container) {
     item.onmouseleave = () => { overlay.style.opacity = '0'; };
   });
 
+  // Helper: captura titulo e texto atuais dos inputs antes de salvar
+  function getCurrentAbout() {
+    const titleEl = container.querySelector('#aboutTitle');
+    const textEl = container.querySelector('#aboutText');
+    return {
+      title: titleEl ? titleEl.value : (about.title || ''),
+      text: textEl ? textEl.value : (about.text || ''),
+      image: about.images[0]?.image || '',
+      images: about.images
+    };
+  }
+
   // Upload multiplo
   container.querySelector('#aboutUploadInput').onchange = async (e) => {
     const files = Array.from(e.target.files);
@@ -108,8 +120,9 @@ export async function renderSobre(container) {
 
     showUploadProgress('aboutUploadProgress', 100);
     e.target.value = '';
-    appState.appData.about = about;
-    await saveAppData('about', { ...about, image: about.images[0]?.image || '' }, true);
+    const currentData = getCurrentAbout();
+    appState.appData.about = currentData;
+    await saveAppData('about', currentData, true);
     renderSobre(container);
   };
 
@@ -117,8 +130,9 @@ export async function renderSobre(container) {
   window.deleteSobrePhoto = async (idx) => {
     if (!confirm('Remover esta imagem?')) return;
     about.images.splice(idx, 1);
-    appState.appData.about = about;
-    await saveAppData('about', { ...about, image: about.images[0]?.image || '' }, true);
+    const currentData = getCurrentAbout();
+    appState.appData.about = currentData;
+    await saveAppData('about', currentData, true);
     renderSobre(container);
   };
 
@@ -129,8 +143,9 @@ export async function renderSobre(container) {
       { scale: photo.scale, posX: photo.posX, posY: photo.posY },
       async (pos) => {
         about.images[idx] = { ...about.images[idx], ...pos };
-        appState.appData.about = about;
-        await saveAppData('about', { ...about, image: about.images[0]?.image || '' }, true);
+        const currentData = getCurrentAbout();
+        appState.appData.about = currentData;
+        await saveAppData('about', currentData, true);
         renderSobre(container);
       }
     );

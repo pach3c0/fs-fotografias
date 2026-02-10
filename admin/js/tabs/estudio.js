@@ -149,6 +149,26 @@ export async function renderEstudio(container) {
     item.onmouseleave = () => { overlay.style.opacity = '0'; };
   });
 
+  // Helper: captura valores atuais dos inputs antes de salvar
+  function getCurrentStudio() {
+    const msgs = [];
+    container.querySelectorAll('[data-whatsapp-text]').forEach((textarea, idx) => {
+      msgs.push({
+        text: textarea.value,
+        delay: parseInt(container.querySelector(`[data-whatsapp-delay="${idx}"]`)?.value || 5)
+      });
+    });
+    return {
+      title: container.querySelector('#studioTitle')?.value || studio.title || '',
+      description: container.querySelector('#studioDesc')?.value || studio.description || '',
+      address: container.querySelector('#studioAddress')?.value || studio.address || '',
+      hours: container.querySelector('#studioHours')?.value || studio.hours || '',
+      whatsapp: container.querySelector('#studioWhatsapp')?.value || studio.whatsapp || '',
+      whatsappMessages: msgs.length > 0 ? msgs : studio.whatsappMessages,
+      photos: studio.photos
+    };
+  }
+
   // Upload de fotos
   container.querySelector('#studioUploadInput').onchange = async (e) => {
     const files = Array.from(e.target.files);
@@ -166,8 +186,9 @@ export async function renderEstudio(container) {
 
     showUploadProgress('studioUploadProgress', 100);
     e.target.value = '';
-    appState.appData.studio = studio;
-    await saveAppData('studio', studio, true);
+    const currentData = getCurrentStudio();
+    appState.appData.studio = currentData;
+    await saveAppData('studio', currentData, true);
     renderEstudio(container);
   };
 
@@ -175,8 +196,9 @@ export async function renderEstudio(container) {
   window.deleteStudioPhoto = async (idx) => {
     if (!confirm('Remover esta foto?')) return;
     studio.photos.splice(idx, 1);
-    appState.appData.studio = studio;
-    await saveAppData('studio', studio, true);
+    const currentData = getCurrentStudio();
+    appState.appData.studio = currentData;
+    await saveAppData('studio', currentData, true);
     renderEstudio(container);
   };
 
@@ -187,8 +209,9 @@ export async function renderEstudio(container) {
       { scale: photo.scale, posX: photo.posX, posY: photo.posY },
       async (pos) => {
         studio.photos[idx] = { ...studio.photos[idx], ...pos };
-        appState.appData.studio = studio;
-        await saveAppData('studio', studio, true);
+        const currentData = getCurrentStudio();
+        appState.appData.studio = currentData;
+        await saveAppData('studio', currentData, true);
         renderEstudio(container);
       }
     );
@@ -204,8 +227,9 @@ export async function renderEstudio(container) {
   window.removeWhatsappMessage = async (idx) => {
     if (!confirm('Remover esta mensagem?')) return;
     studio.whatsappMessages.splice(idx, 1);
-    appState.appData.studio = studio;
-    await saveAppData('studio', studio, true);
+    const currentData = getCurrentStudio();
+    appState.appData.studio = currentData;
+    await saveAppData('studio', currentData, true);
     renderEstudio(container);
   };
 
