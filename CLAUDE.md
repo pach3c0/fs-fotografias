@@ -49,7 +49,7 @@ Site/
         manutencao.js       # renderManutencao(container)
       utils/
         helpers.js          # resolveImagePath, formatDate, generateId, copyToClipboard, escapeHtml
-        upload.js           # compressImage, uploadImage, showUploadProgress
+        upload.js           # compressImage, uploadImage, uploadVideo, showUploadProgress
         api.js              # apiGet, apiPost, apiPut, apiDelete (wrapper com auth automatico)
         photoEditor.js      # photoEditorHtml, setupPhotoEditor (modal reutilizavel)
         notifications.js    # startNotificationPolling, stopNotificationPolling, toggleNotifications, markAllNotificationsRead, onNotifClick
@@ -69,6 +69,7 @@ Site/
       gallery.js            # JS da galeria do cliente (~437 linhas)
   uploads/                  # Imagens do admin (servidas pelo Nginx)
   uploads/sessions/         # Fotos de sessoes de clientes
+  uploads/videos/           # Videos do estudio (ate 300MB)
   src/
     server.js               # Entry point Express
     middleware/
@@ -85,7 +86,7 @@ Site/
       site-data.js          # GET/PUT /site-data, GET /site-config
       newsletter.js         # POST /newsletter/subscribe, GET/DELETE /newsletter
       sessions.js           # CRUD /sessions, upload/delete fotos, client endpoints
-      upload.js             # POST /admin/upload (salva em /uploads/)
+      upload.js             # POST /admin/upload (imagens em /uploads/), POST /admin/upload-video (videos em /uploads/videos/)
       notifications.js      # GET /notifications, GET /notifications/unread-count, PUT /notifications/read-all
     utils/
       multerConfig.js       # createUploader(subdir, options) - config compartilhada do multer
@@ -122,6 +123,17 @@ Tab chama uploadImage(file, token, onProgress)
   → Backend: multer salva no disco em /uploads/
   → Retorna { url: '/uploads/filename.jpg', filename: '...' }
   → Tab salva a URL no campo correspondente do appState.appData
+  → Chama saveAppData() para persistir no MongoDB
+```
+
+### Upload de videos:
+```
+Tab chama uploadVideo(file, token, onProgress)
+  → utils/upload.js envia arquivo direto (sem compressao)
+  → XHR POST /api/admin/upload-video com FormData
+  → Backend: multer salva no disco em /uploads/videos/ (limite 300MB)
+  → Retorna { url: '/uploads/videos/filename.mp4', filename: '...' }
+  → Tab salva a URL no campo videoUrl do appState.appData.studio
   → Chama saveAppData() para persistir no MongoDB
 ```
 
@@ -786,6 +798,7 @@ Documento unico no MongoDB que armazena todo o conteudo do site:
     address: String,
     hours: String,
     whatsapp: String,
+    videoUrl: String,           // URL do video do estudio (/uploads/videos/xxx.mp4)
     photos: [                   // Fotos do estudio
       { image: String, posX: Number, posY: Number, scale: Number }
     ],
