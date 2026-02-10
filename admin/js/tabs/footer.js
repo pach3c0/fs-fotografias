@@ -113,8 +113,12 @@ export async function renderFooter(container) {
   };
 
   // Remover link
-  window.removeFooterLink = (idx) => {
+  window.removeFooterLink = async (idx) => {
+    if (!confirm('Remover este link?')) return;
     quickLinks.splice(idx, 1);
+    const currentFooter = { ...footer, quickLinks };
+    appState.appData.footer = currentFooter;
+    await saveAppData('footer', currentFooter, true);
     renderFooter(container);
   };
 

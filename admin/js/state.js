@@ -25,7 +25,7 @@ export async function loadAppData() {
   }
 }
 
-export async function saveAppData(section, data) {
+export async function saveAppData(section, data, silent = false) {
   try {
     // Protecao: nao salvar se os dados nao foram carregados
     if (!appState.appData || Object.keys(appState.appData).length === 0) {
@@ -47,8 +47,19 @@ export async function saveAppData(section, data) {
 
     if (!response.ok) throw new Error('Erro ao salvar dados');
 
-    appState.appData = payload;
-    alert('Salvo com sucesso!');
+    const result = await response.json();
+
+    // Usar dados retornados pelo servidor para manter sincronizado
+    if (result.data) {
+      appState.appData = result.data;
+    } else {
+      appState.appData = payload;
+    }
+
+    if (!silent) {
+      alert('Salvo com sucesso!');
+    }
+    console.log(`Secao '${section}' salva com sucesso`);
     return true;
   } catch (error) {
     alert('Erro: ' + error.message);

@@ -123,7 +123,7 @@ export async function renderAlbuns(container) {
 
       showUploadProgress(`albumUploadProgress${albumIdx}`, 100);
       appState.appData.albums = albums;
-      await saveAppData('albums', albums);
+      await saveAppData('albums', albums, true);
       renderAlbuns(container);
     };
   });
@@ -159,7 +159,7 @@ export async function renderAlbuns(container) {
     if (!confirm('Remover este álbum e todas as fotos?')) return;
     albums.splice(idx, 1);
     appState.appData.albums = albums;
-    await saveAppData('albums', albums);
+    await saveAppData('albums', albums, true);
     renderAlbuns(container);
   };
 
@@ -167,7 +167,7 @@ export async function renderAlbuns(container) {
   window.setAlbumCover = async (albumIdx, photoIdx) => {
     albums[albumIdx].cover = albums[albumIdx].photos[photoIdx];
     appState.appData.albums = albums;
-    await saveAppData('albums', albums);
+    await saveAppData('albums', albums, true);
     renderAlbuns(container);
   };
 
@@ -180,7 +180,7 @@ export async function renderAlbuns(container) {
       album.cover = album.photos[0] || '';
     }
     appState.appData.albums = albums;
-    await saveAppData('albums', albums);
+    await saveAppData('albums', albums, true);
     renderAlbuns(container);
   };
 }

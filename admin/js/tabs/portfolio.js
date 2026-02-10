@@ -96,7 +96,7 @@ export async function renderPortfolio(container) {
 
     if (addedCount > 0) {
       appState.appData.portfolio = portfolio;
-      await saveAppData('portfolio', portfolio);
+      await saveAppData('portfolio', portfolio, true);
       renderPortfolio(container);
     }
 
@@ -132,7 +132,7 @@ export async function renderPortfolio(container) {
     portfolio.splice(targetIdx, 0, item);
 
     appState.appData.portfolio = portfolio;
-    await saveAppData('portfolio', portfolio);
+    await saveAppData('portfolio', portfolio, true);
     renderPortfolio(container);
   });
 
@@ -146,7 +146,7 @@ export async function renderPortfolio(container) {
     if (!confirm('Remover esta foto da galeria?')) return;
     portfolio.splice(idx, 1);
     appState.appData.portfolio = portfolio;
-    await saveAppData('portfolio', portfolio);
+    await saveAppData('portfolio', portfolio, true);
     renderPortfolio(container);
   };
 
@@ -158,7 +158,7 @@ export async function renderPortfolio(container) {
       async (pos) => {
         portfolio[idx] = { ...portfolio[idx], ...pos };
         appState.appData.portfolio = portfolio;
-        await saveAppData('portfolio', portfolio);
+        await saveAppData('portfolio', portfolio, true);
         renderPortfolio(container);
       }
     );

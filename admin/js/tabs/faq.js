@@ -44,8 +44,11 @@ export async function renderFaq(container) {
 
   container.innerHTML = html;
 
-  window.deleteFaq = (index) => {
+  window.deleteFaq = async (index) => {
+    if (!confirm('Remover esta pergunta?')) return;
     faqData.faqs.splice(index, 1);
+    appState.appData.faq = faqData;
+    await saveAppData('faq', faqData, true);
     renderFaq(container);
   };
 

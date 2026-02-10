@@ -109,7 +109,7 @@ export async function renderSobre(container) {
     showUploadProgress('aboutUploadProgress', 100);
     e.target.value = '';
     appState.appData.about = about;
-    await saveAppData('about', { ...about, image: about.images[0]?.image || '' });
+    await saveAppData('about', { ...about, image: about.images[0]?.image || '' }, true);
     renderSobre(container);
   };
 
@@ -118,7 +118,7 @@ export async function renderSobre(container) {
     if (!confirm('Remover esta imagem?')) return;
     about.images.splice(idx, 1);
     appState.appData.about = about;
-    await saveAppData('about', { ...about, image: about.images[0]?.image || '' });
+    await saveAppData('about', { ...about, image: about.images[0]?.image || '' }, true);
     renderSobre(container);
   };
 
@@ -130,7 +130,7 @@ export async function renderSobre(container) {
       async (pos) => {
         about.images[idx] = { ...about.images[idx], ...pos };
         appState.appData.about = about;
-        await saveAppData('about', { ...about, image: about.images[0]?.image || '' });
+        await saveAppData('about', { ...about, image: about.images[0]?.image || '' }, true);
         renderSobre(container);
       }
     );

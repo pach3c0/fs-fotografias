@@ -161,7 +161,7 @@ export async function renderManutencao(container) {
           ...appState.appData.maintenance,
           carouselPhotos: photos
         };
-        await saveAppData('maintenance', appState.appData.maintenance);
+        await saveAppData('maintenance', appState.appData.maintenance, true);
         renderManutencao(container);
       }
     );
@@ -189,7 +189,7 @@ export async function renderManutencao(container) {
       ...appState.appData.maintenance,
       carouselPhotos: currentPhotos
     };
-    await saveAppData('maintenance', appState.appData.maintenance);
+    await saveAppData('maintenance', appState.appData.maintenance, true);
     renderManutencao(container);
   };
 
@@ -202,7 +202,7 @@ export async function renderManutencao(container) {
       ...appState.appData.maintenance,
       carouselPhotos: currentPhotos
     };
-    await saveAppData('maintenance', appState.appData.maintenance);
+    await saveAppData('maintenance', appState.appData.maintenance, true);
     renderManutencao(container);
   };
 

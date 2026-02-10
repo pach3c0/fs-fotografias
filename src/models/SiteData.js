@@ -20,7 +20,8 @@ const SiteDataSchema = new mongoose.Schema({
   about: {
     title: { type: String, default: '' },
     text: { type: String, default: '' },
-    image: { type: String, default: '' }
+    image: { type: String, default: '' },
+    images: { type: Array, default: [] }
   },
   portfolio: {
     type: Array,

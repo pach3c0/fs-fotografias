@@ -167,7 +167,7 @@ export async function renderEstudio(container) {
     showUploadProgress('studioUploadProgress', 100);
     e.target.value = '';
     appState.appData.studio = studio;
-    await saveAppData('studio', studio);
+    await saveAppData('studio', studio, true);
     renderEstudio(container);
   };
 
@@ -176,7 +176,7 @@ export async function renderEstudio(container) {
     if (!confirm('Remover esta foto?')) return;
     studio.photos.splice(idx, 1);
     appState.appData.studio = studio;
-    await saveAppData('studio', studio);
+    await saveAppData('studio', studio, true);
     renderEstudio(container);
   };
 
@@ -188,7 +188,7 @@ export async function renderEstudio(container) {
       async (pos) => {
         studio.photos[idx] = { ...studio.photos[idx], ...pos };
         appState.appData.studio = studio;
-        await saveAppData('studio', studio);
+        await saveAppData('studio', studio, true);
         renderEstudio(container);
       }
     );
@@ -201,8 +201,11 @@ export async function renderEstudio(container) {
   };
 
   // Remover mensagem WhatsApp
-  window.removeWhatsappMessage = (idx) => {
+  window.removeWhatsappMessage = async (idx) => {
+    if (!confirm('Remover esta mensagem?')) return;
     studio.whatsappMessages.splice(idx, 1);
+    appState.appData.studio = studio;
+    await saveAppData('studio', studio, true);
     renderEstudio(container);
   };
 
