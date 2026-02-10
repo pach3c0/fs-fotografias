@@ -33,7 +33,9 @@ export async function saveAppData(section, data, silent = false) {
       return false;
     }
 
-    const payload = { ...appState.appData };
+    // Enviar APENAS a secao que esta sendo salva
+    // O backend usa $set, entao so atualiza esta secao no MongoDB
+    const payload = {};
     payload[section] = data;
 
     const response = await fetch('/api/site-data', {
@@ -49,11 +51,11 @@ export async function saveAppData(section, data, silent = false) {
 
     const result = await response.json();
 
-    // Usar dados retornados pelo servidor para manter sincronizado
+    // Sincronizar estado local com dados do servidor
     if (result.data) {
       appState.appData = result.data;
     } else {
-      appState.appData = payload;
+      appState.appData[section] = data;
     }
 
     if (!silent) {
