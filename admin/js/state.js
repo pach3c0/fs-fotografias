@@ -27,6 +27,12 @@ export async function loadAppData() {
 
 export async function saveAppData(section, data) {
   try {
+    // Protecao: nao salvar se os dados nao foram carregados
+    if (!appState.appData || Object.keys(appState.appData).length === 0) {
+      alert('Erro: dados nao carregados. Recarregue a pagina e tente novamente.');
+      return false;
+    }
+
     const payload = { ...appState.appData };
     payload[section] = data;
 
