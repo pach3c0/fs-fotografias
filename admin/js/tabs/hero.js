@@ -266,8 +266,8 @@ export async function renderHero(container) {
       <div style="position:absolute; inset:0; background:rgba(0,0,0,${overlay/100});"></div>
       <div style="position:absolute; top:0; left:0; right:0; height:${topBar}%; background:#000; z-index:2;"></div>
       <div style="position:absolute; bottom:0; left:0; right:0; height:${bottomBar}%; background:#000; z-index:2;"></div>
-      <h1 style="position:absolute; left:${tpx}%; top:${tpy}%; transform:translate(-50%,-50%); color:white; font-family:'Playfair Display',serif; font-size:${Math.max(tfs * 0.5, 16)}px; font-weight:bold; text-align:center; text-shadow:2px 2px 4px rgba(0,0,0,0.7); z-index:3; white-space:nowrap;">${titleInput.value || ''}</h1>
-      <p style="position:absolute; left:${spx}%; top:${spy}%; transform:translate(-50%,-50%); color:#e5e7eb; font-size:${Math.max(sfs * 0.5, 10)}px; text-align:center; text-shadow:1px 1px 2px rgba(0,0,0,0.7); z-index:3; white-space:nowrap;">${subtitleInput.value || ''}</p>
+      <h1 style="position:absolute; left:${tpx}%; top:${tpy}%; transform:translate(-50%,-50%); color:white; font-family:'Playfair Display',serif; font-size:clamp(28px, 6vw, ${tfs}px); font-weight:bold; text-align:center; text-shadow:2px 2px 4px rgba(0,0,0,0.7); z-index:3; line-height:1.15; max-width:min(90vw, 800px); white-space:normal;">${titleInput.value || ''}</h1>
+      <p style="position:absolute; left:${spx}%; top:${spy}%; transform:translate(-50%,-50%); color:#e5e7eb; font-size:clamp(14px, 3.5vw, ${sfs}px); text-align:center; text-shadow:1px 1px 2px rgba(0,0,0,0.7); z-index:3; line-height:1.6; max-width:min(90vw, 600px); white-space:normal;">${subtitleInput.value || ''}</p>
     `;
   }
 
