@@ -138,6 +138,8 @@ function render() {
     heroTitle.style.fontSize = `clamp(28px, 6vw, ${titleFS}px)`;
     heroTitle.style.lineHeight = '1.15';
     heroTitle.style.maxWidth = 'min(90vw, 800px)';
+    heroTitle.style.whiteSpace = 'normal';
+    heroTitle.style.overflowWrap = 'break-word';
 
     // Subtitulo
     const subPosX = store.hero.subtitlePosX;
@@ -151,6 +153,8 @@ function render() {
     heroSubtitle.style.fontSize = `clamp(14px, 3.5vw, ${subtitleFS}px)`;
     heroSubtitle.style.lineHeight = '1.6';
     heroSubtitle.style.maxWidth = 'min(90vw, 600px)';
+    heroSubtitle.style.whiteSpace = 'normal';
+    heroSubtitle.style.overflowWrap = 'break-word';
 
     // ===== SOBRE =====
     document.getElementById('dom-about-title').textContent = store.about.title;

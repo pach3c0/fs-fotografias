@@ -164,14 +164,6 @@ export async function renderHero(container) {
   // Refs
   const previewContainer = container.querySelector('#heroPreview');
 
-  // Sincroniza o aspecto do preview com a proporção real da tela (sua sugestão)
-  const syncAspectRatio = () => {
-    const ratio = window.innerWidth / window.innerHeight;
-    previewContainer.style.aspectRatio = ratio.toFixed(4);
-  };
-  syncAspectRatio();
-  window.addEventListener('resize', syncAspectRatio);
-
   const titleInput = container.querySelector('#heroTitle');
   const subtitleInput = container.querySelector('#heroSubtitle');
   const imageInput = container.querySelector('#heroImage');
@@ -294,5 +286,16 @@ export async function renderHero(container) {
     `;
   }
 
-  updatePreview();
+  // Sincroniza redimensionamento e atualiza calculos matematicos (CQW)
+  const handleResize = () => {
+    if (!document.body.contains(previewContainer)) {
+      window.removeEventListener('resize', handleResize);
+      return;
+    }
+    const ratio = window.innerWidth / window.innerHeight;
+    previewContainer.style.aspectRatio = ratio.toFixed(4);
+    updatePreview();
+  };
+  window.addEventListener('resize', handleResize);
+  handleResize();
 }
