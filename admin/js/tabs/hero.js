@@ -269,15 +269,16 @@ export async function renderHero(container) {
     const bottomBar = parseInt(bottomBarInput.value);
 
     const scalePct = scale * 100;
-    
+
     // Para um espelho perfeito, convertemos os limites de PX do site para unidades relativas ao container (CQW)
-    // Assumindo uma tela de referência de 1920px:
-    // 28px (min title) = 1.45cqw | 14px (min sub) = 0.73cqw
-    // 800px (max-width title) = 41.6cqw | 600px (max-width sub) = 31.25cqw
-    const titleMaxW = (800 / 1920) * 100;
-    const subMaxW = (600 / 1920) * 100;
-    const titleFontSizeCqw = (tfs / 1920) * 100;
-    const subFontSizeCqw = (sfs / 1920) * 100;
+    // Baseado na largura atual da janela para manter a proporção exata do que você vê no site público
+    const windowW = window.innerWidth;
+    const titleMaxW = (800 / windowW) * 100;
+    const subMaxW = (600 / windowW) * 100;
+    const titleFontSizeCqw = (tfs / windowW) * 100;
+    const subFontSizeCqw = (sfs / windowW) * 100;
+    const titleMinCqw = (28 / windowW) * 100;
+    const subMinCqw = (14 / windowW) * 100;
 
     const imgHtml = image ? `<div style="position:absolute; inset:0; background-image:url('${resolveImagePath(image)}'); background-repeat:no-repeat; background-size:max(${scalePct}%, 100%) max(${scalePct}%, 100%); background-position:${px}% ${py}%;"></div>` : '';
 
@@ -286,8 +287,8 @@ export async function renderHero(container) {
       <div style="position:absolute; inset:0; background:rgba(0,0,0,${overlay/100});"></div>
       <div style="position:absolute; top:0; left:0; right:0; height:${topBar}%; background:#000; z-index:2;"></div>
       <div style="position:absolute; bottom:0; left:0; right:0; height:${bottomBar}%; background:#000; z-index:2;"></div>
-      <h1 style="position:absolute; left:${tpx}%; top:${tpy}%; transform:translate(-50%,-50%); color:white; font-family:'Playfair Display',serif; font-size:clamp(1.45cqw, 6cqw, ${titleFontSizeCqw}cqw); font-weight:bold; text-align:center; text-shadow:2px 2px 4px rgba(0,0,0,0.7); z-index:3; line-height:1.15; width:90%; max-width:${titleMaxW}cqw; white-space:normal; pointer-events:none;">${titleInput.value || ''}</h1>
-      <p style="position:absolute; left:${spx}%; top:${spy}%; transform:translate(-50%,-50%); color:#e5e7eb; font-size:clamp(0.73cqw, 3.5cqw, ${subFontSizeCqw}cqw); text-align:center; text-shadow:1px 1px 2px rgba(0,0,0,0.7); z-index:3; line-height:1.6; width:80%; max-width:${subMaxW}cqw; white-space:normal; pointer-events:none;">${subtitleInput.value || ''}</p>
+      <h1 style="position:absolute; left:${tpx}%; top:${tpy}%; transform:translate(-50%,-50%); color:white; font-family:'Playfair Display',serif; font-size:clamp(${titleMinCqw}cqw, 6cqw, ${titleFontSizeCqw}cqw); font-weight:bold; text-align:center; text-shadow:2px 2px 4px rgba(0,0,0,0.7); z-index:3; line-height:1.15; width:90%; max-width:${titleMaxW}cqw; white-space:normal; pointer-events:none;">${titleInput.value || ''}</h1>
+      <p style="position:absolute; left:${spx}%; top:${spy}%; transform:translate(-50%,-50%); color:#e5e7eb; font-size:clamp(${subMinCqw}cqw, 3.5cqw, ${subFontSizeCqw}cqw); text-align:center; text-shadow:1px 1px 2px rgba(0,0,0,0.7); z-index:3; line-height:1.6; width:80%; max-width:${subMaxW}cqw; white-space:normal; pointer-events:none;">${subtitleInput.value || ''}</p>
     `;
   }
 
