@@ -52,6 +52,7 @@ function processRemoteData(remote) {
                 address: remote.studio?.address ?? "",
                 hours: remote.studio?.hours ?? "",
                 whatsapp: remote.studio?.whatsapp ?? "",
+                videoUrl: remote.studio?.videoUrl ?? "",
                 whatsappMessages: remote.studio?.whatsappMessages ?? [],
                 photos: remote.studio?.photos ? remote.studio.photos.map(p => ({
                     image: p.image,
@@ -251,6 +252,25 @@ function render() {
                 onmouseleave="this.style.transform='scale(${scale})'" />
         </div>
     `}).join('');
+
+    // Video do estudio
+    const studioVideoContainer = document.getElementById('dom-studio-video');
+    if (studioVideoContainer) {
+        if (store.studio.videoUrl) {
+            studioVideoContainer.innerHTML = `
+                <div class="aspect-video rounded-2xl overflow-hidden shadow-lg bg-black">
+                    <video src="${resolveImagePath(store.studio.videoUrl)}" controls playsinline
+                        class="w-full h-full object-contain"
+                        poster="">
+                        Seu navegador nao suporta video HTML5.
+                    </video>
+                </div>
+            `;
+            studioVideoContainer.style.display = '';
+        } else {
+            studioVideoContainer.style.display = 'none';
+        }
+    }
 
     if (store.studio.title) {
         document.getElementById('dom-studio-title').textContent = store.studio.title;

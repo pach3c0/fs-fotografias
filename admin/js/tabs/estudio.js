@@ -4,7 +4,7 @@
 
 import { appState, saveAppData } from '../state.js';
 import { resolveImagePath, generateId } from '../utils/helpers.js';
-import { uploadImage, showUploadProgress } from '../utils/upload.js';
+import { uploadImage, uploadVideo, showUploadProgress } from '../utils/upload.js';
 import { photoEditorHtml, setupPhotoEditor } from '../utils/photoEditor.js';
 
 export async function renderEstudio(container) {
@@ -115,6 +115,33 @@ export async function renderEstudio(container) {
         </div>
       </div>
 
+      <!-- Video -->
+      <div style="border:1px solid #374151; border-radius:0.75rem; background:#1f2937; padding:1.5rem; display:flex; flex-direction:column; gap:1rem;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <h3 style="font-size:1rem; font-weight:600; color:#d1d5db;">Video do Estudio</h3>
+            <p style="font-size:0.75rem; color:#9ca3af;">Aparece abaixo das fotos no site. Maximo 300MB.</p>
+          </div>
+          <div style="display:flex; gap:0.5rem; align-items:center;">
+            ${studio.videoUrl ? `
+              <button id="removeVideoBtn" style="background:#ef4444; color:white; padding:0.375rem 0.75rem; border-radius:0.375rem; border:none; cursor:pointer; font-size:0.875rem; font-weight:600;">
+                Remover Video
+              </button>
+            ` : ''}
+            <label style="background:#2563eb; color:white; padding:0.375rem 0.75rem; border-radius:0.375rem; font-size:0.875rem; font-weight:600; cursor:pointer;">
+              ${studio.videoUrl ? 'Trocar Video' : 'Upload de Video'}
+              <input type="file" accept=".mp4,.mov,.webm" id="studioVideoInput" style="display:none;">
+            </label>
+          </div>
+        </div>
+        <div id="studioVideoProgress"></div>
+        ${studio.videoUrl ? `
+          <div style="aspect-ratio:16/9; border-radius:0.5rem; overflow:hidden; background:#000;">
+            <video src="${resolveImagePath(studio.videoUrl)}" controls style="width:100%; height:100%; object-fit:contain;"></video>
+          </div>
+        ` : '<p style="color:#9ca3af; text-align:center; padding:1.5rem;">Nenhum video. Use o botao acima para adicionar.</p>'}
+      </div>
+
       <!-- Fotos do Estudio -->
       <div style="border:1px solid #374151; border-radius:0.75rem; background:#1f2937; padding:1.5rem; display:flex; flex-direction:column; gap:1rem;">
         <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -164,8 +191,49 @@ export async function renderEstudio(container) {
       address: container.querySelector('#studioAddress')?.value || studio.address || '',
       hours: container.querySelector('#studioHours')?.value || studio.hours || '',
       whatsapp: container.querySelector('#studioWhatsapp')?.value || studio.whatsapp || '',
+      videoUrl: studio.videoUrl || '',
       whatsappMessages: msgs.length > 0 ? msgs : studio.whatsappMessages,
       photos: studio.photos
+    };
+  }
+
+  // Upload de video
+  container.querySelector('#studioVideoInput').onchange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (file.size > 300 * 1024 * 1024) {
+      alert('O video deve ter no maximo 300MB.');
+      return;
+    }
+
+    try {
+      showUploadProgress('studioVideoProgress', 0);
+      const result = await uploadVideo(file, appState.authToken, (percent) => {
+        showUploadProgress('studioVideoProgress', percent);
+      });
+      showUploadProgress('studioVideoProgress', 100);
+      studio.videoUrl = result.url;
+      e.target.value = '';
+      const currentData = getCurrentStudio();
+      appState.appData.studio = currentData;
+      await saveAppData('studio', currentData, true);
+      renderEstudio(container);
+    } catch (error) {
+      alert('Erro no upload do video: ' + error.message);
+    }
+  };
+
+  // Remover video
+  const removeVideoBtn = container.querySelector('#removeVideoBtn');
+  if (removeVideoBtn) {
+    removeVideoBtn.onclick = async () => {
+      if (!confirm('Remover o video do estudio?')) return;
+      studio.videoUrl = '';
+      const currentData = getCurrentStudio();
+      appState.appData.studio = currentData;
+      await saveAppData('studio', currentData, true);
+      renderEstudio(container);
     };
   }
 
@@ -249,6 +317,7 @@ export async function renderEstudio(container) {
       address: container.querySelector('#studioAddress').value,
       hours: container.querySelector('#studioHours').value,
       whatsapp: container.querySelector('#studioWhatsapp').value,
+      videoUrl: studio.videoUrl || '',
       whatsappMessages: msgs,
       photos: studio.photos
     };

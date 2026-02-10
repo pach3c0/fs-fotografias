@@ -95,6 +95,54 @@ export async function uploadImage(file, authToken, onProgress = null) {
 }
 
 /**
+ * Faz upload de video para o servidor (sem compressao)
+ * @param {File} file - Arquivo de video
+ * @param {string} authToken - Token JWT
+ * @param {Function} onProgress - Callback de progresso (0-100)
+ * @returns {Promise<{url: string, filename: string}>}
+ */
+export async function uploadVideo(file, authToken, onProgress = null) {
+  const formData = new FormData();
+  formData.append('video', file, file.name);
+
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+
+    xhr.upload.addEventListener('progress', (e) => {
+      if (e.lengthComputable && onProgress) {
+        const percent = Math.round((e.loaded / e.total) * 100);
+        onProgress(percent);
+      }
+    });
+
+    xhr.addEventListener('load', () => {
+      if (xhr.status === 200) {
+        try {
+          const response = JSON.parse(xhr.responseText);
+          if (response.ok || response.success) {
+            resolve({ url: response.url, filename: response.filename });
+          } else {
+            reject(new Error(response.error || 'Upload falhou'));
+          }
+        } catch (e) {
+          reject(new Error('Resposta invalida do servidor'));
+        }
+      } else {
+        reject(new Error(`Erro ${xhr.status}: ${xhr.statusText}`));
+      }
+    });
+
+    xhr.addEventListener('error', () => {
+      reject(new Error('Erro de conexao'));
+    });
+
+    xhr.open('POST', '/api/admin/upload-video');
+    xhr.setRequestHeader('Authorization', `Bearer ${authToken}`);
+    xhr.send(formData);
+  });
+}
+
+/**
  * Mostra barra de progresso visual
  * @param {string} containerId - ID do container
  * @param {number} percent - Porcentagem (0-100)
