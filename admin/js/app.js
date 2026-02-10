@@ -1,5 +1,5 @@
 /**
- * Aplicacao Admin CLIQUE·ZOOM
+ * Aplicacao Admin FS FOTOGRAFIAS
  */
 
 import { appState, loadAppData, saveAppData } from './state.js';

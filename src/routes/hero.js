@@ -4,7 +4,7 @@ const SiteData = require('../models/SiteData');
 const { authenticateToken } = require('../middleware/auth');
 
 const defaultHero = {
-  title: 'CLIQUE·ZOOM',
+  title: 'FS FOTOGRAFIAS',
   subtitle: 'Fotografia Minimalista e Autêntica',
   image: '',
   transform: { scale: 1, posX: 50, posY: 50 },

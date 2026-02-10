@@ -1,4 +1,4 @@
-# 📸 CLIQUE·ZOOM - Plataforma Fotográfica
+# 📸 FS FOTOGRAFIAS - Plataforma Fotográfica
 
 Sistema completo de gestão de conteúdo para estúdio fotográfico com painel administrativo e site público.
 
@@ -32,7 +32,7 @@ Site/
 
 ```bash
 # 1. Clone o repositório
-git clone https://github.com/pach3c0/clique-zoom.git
+git clone https://github.com/pach3c0/fs-fotografias.git
 cd Site
 
 # 2. Instale dependências
@@ -96,13 +96,13 @@ PORT=3050
 ## 📝 Uso
 
 ### Painel Admin
-1. Acesse: `https://cliquezoom.com.br/admin`
+1. Acesse: `https://fsfotografias.com.br/admin`
 2. Faça login com a senha configurada
 3. Edite conteúdo: Hero, Sobre, Portfolio, Estúdio
 4. Clique em "Salvar Dados"
 
 ### Site Público
-- Acesse: `https://cliquezoom.com.br`
+- Acesse: `https://fsfotografias.com.br`
 - Dados carregados automaticamente do MongoDB
 
 ## 🎯 Features
@@ -116,4 +116,4 @@ PORT=3050
 
 ## 📄 Licença
 
-© 2026 CLIQUE·ZOOM - Todos os direitos reservados
+© 2026 FS FOTOGRAFIAS - Todos os direitos reservados

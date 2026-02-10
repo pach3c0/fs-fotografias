@@ -353,7 +353,7 @@ router.get('/sessions/:sessionId/export', async (req, res) => {
     const token = req.query.token || (req.headers['authorization'] && req.headers['authorization'].split(' ')[1]);
     if (!token) return res.status(401).json({ error: 'Token não fornecido' });
     const jwt = require('jsonwebtoken');
-    const secret = process.env.JWT_SECRET || 'clique-zoom-secret-key';
+    const secret = process.env.JWT_SECRET || 'fs-fotografias-secret-key';
     try { jwt.verify(token, secret); } catch { return res.status(403).json({ error: 'Token inválido' }); }
 
     const { sessionId } = req.params;

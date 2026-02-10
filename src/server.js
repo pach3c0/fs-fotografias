@@ -31,7 +31,7 @@ app.get('/preview', (req, res) => {
 });
 
 // MongoDB connection
-const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/cliquezoom';
+const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/fsfotografias';
 let isConnected = false;
 
 const connectWithRetry = async () => {

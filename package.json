@@ -1,5 +1,5 @@
 {
-  "name": "clique-zoom-platform",
+  "name": "fs-fotografias-platform",
   "version": "2.0.0",
   "description": "Platform de portfólio fotográfico: Site público + Painel admin + Galeria privada do cliente",
   "main": "src/server.js",
@@ -29,7 +29,7 @@
     "admin",
     "galeria"
   ],
-  "author": "CLIQUE·ZOOM",
+  "author": "FS FOTOGRAFIAS",
   "license": "MIT",
   "type": "commonjs",
   "engines": {

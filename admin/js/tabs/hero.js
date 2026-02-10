@@ -20,7 +20,7 @@ export async function renderHero(container) {
           <div>
             <label style="display:block; font-size:0.75rem; font-weight:500; color:#9ca3af; margin-bottom:0.25rem;">Titulo Principal</label>
             <input type="text" id="heroTitle" style="width:100%; padding:0.5rem 0.75rem; border:1px solid #374151; border-radius:0.375rem; background:#111827; color:#f3f4f6;"
-              value="${hero.title || ''}" placeholder="Ex: CLIQUE·ZOOM">
+              value="${hero.title || ''}" placeholder="Ex: FS FOTOGRAFIAS">
           </div>
           <div>
             <label style="display:block; font-size:0.75rem; font-weight:500; color:#9ca3af; margin-bottom:0.25rem;">Subtitulo</label>

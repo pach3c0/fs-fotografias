@@ -159,7 +159,7 @@ function renderSelectionMode() {
         return `
             <div class="photo-item" onclick="openLightbox(${idx})">
                 <img src="${photo.url}" alt="" loading="lazy">
-                ${showWatermark ? '<div class="watermark-overlay"><span class="watermark-text">CLIQUE&middot;ZOOM</span></div>' : ''}
+                ${showWatermark ? '<div class="watermark-overlay"><span class="watermark-text">FS FOTOGRAFIAS</span></div>' : ''}
                 <button class="photo-heart ${isSelected ? 'selected' : ''}" onclick="event.stopPropagation(); toggleSelect('${photo.id}', this)">
                     ${HEART_SVG}
                 </button>
@@ -186,7 +186,7 @@ function renderGalleryMode() {
     grid.innerHTML = photos.map((photo, idx) => `
         <div class="photo-item" onclick="openLightbox(${idx})">
             <img src="${photo.url}" alt="" loading="lazy">
-            ${showWatermark ? '<div class="watermark-overlay"><span class="watermark-text">CLIQUE&middot;ZOOM</span></div>' : ''}
+            ${showWatermark ? '<div class="watermark-overlay"><span class="watermark-text">FS FOTOGRAFIAS</span></div>' : ''}
             <div class="photo-download">
                 <a href="${photo.url}" download="${photo.filename}" onclick="event.stopPropagation()">
                     ${DOWNLOAD_SVG} Baixar
@@ -220,7 +220,7 @@ function showStatusScreen(type) {
             submittedGrid.innerHTML = selectedList.map((photo, idx) => `
                 <div class="photo-item" onclick="openLightbox(${photos.indexOf(photo)})">
                     <img src="${photo.url}" alt="" loading="lazy">
-                    ${showWatermark ? '<div class="watermark-overlay"><span class="watermark-text">CLIQUE&middot;ZOOM</span></div>' : ''}
+                    ${showWatermark ? '<div class="watermark-overlay"><span class="watermark-text">FS FOTOGRAFIAS</span></div>' : ''}
                     <div style="position:absolute; top:0.5rem; right:0.5rem; width:28px; height:28px; background:#dc2626; border-radius:50%; display:flex; align-items:center; justify-content:center; pointer-events:none;">
                         <svg viewBox="0 0 24 24" width="14" height="14" stroke="#fff" fill="#fff" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
                     </div>

@@ -12,7 +12,7 @@ const fs = require('fs');
 const SiteData = require('./src/models/SiteData');
 
 async function migrate() {
-  const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/cliquezoom';
+  const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/fsfotografias';
   console.log('Conectando ao MongoDB...');
 
   await mongoose.connect(mongoUri, {

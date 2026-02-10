@@ -1,6 +1,6 @@
-Plano de Reestruturacao - CLIQUE-ZOOM
+Plano de Reestruturacao - FS FOTOGRAFIAS
 Contexto
-O app CLIQUE-ZOOM e uma plataforma de portfolio fotografico (site publico + admin + galeria de clientes). O codebase cresceu de forma desorganizada: ~960 linhas de codigo morto, server.js monolitico de 738 linhas, admin/index.html com 2100+ linhas, Hero/FAQ salvos em JSON file (quebra na Vercel), TailwindCSS compilando no browser via CDN (causa travamento), e 3 implementacoes diferentes de autenticacao (so 1 usada).
+O app FS FOTOGRAFIAS e uma plataforma de portfolio fotografico (site publico + admin + galeria de clientes). O codebase cresceu de forma desorganizada: ~960 linhas de codigo morto, server.js monolitico de 738 linhas, admin/index.html com 2100+ linhas, Hero/FAQ salvos em JSON file (quebra na Vercel), TailwindCSS compilando no browser via CDN (causa travamento), e 3 implementacoes diferentes de autenticacao (so 1 usada).
 
 O objetivo e reestruturar sem reescrever: mesmo design visual, mesma stack, mesmo deploy na Vercel, mas codigo limpo e modular.
 

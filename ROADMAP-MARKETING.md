@@ -1,4 +1,4 @@
-# CLIQUE·ZOOM - Roadmap: Marketing Intelligence
+# FS FOTOGRAFIAS - Roadmap: Marketing Intelligence
 
 ## Status: PLANEJADO (nao implementado)
 

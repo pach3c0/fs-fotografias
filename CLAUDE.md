@@ -1,4 +1,4 @@
-# CLIQUE·ZOOM - Instrucoes para o Assistente de IA
+# FS FOTOGRAFIAS - Instrucoes para o Assistente de IA
 
 ## O QUE E ESTE PROJETO
 
@@ -8,8 +8,8 @@ Plataforma de portfolio fotografico com 3 frontends e 1 backend:
 - **Galeria do cliente** (`cliente/index.html` + `cliente/js/gallery.js`) - Fotos privadas com codigo de acesso
 - **API backend** (`src/server.js` + `src/routes/`) - Express.js + MongoDB
 
-Deploy: **VPS Contabo** (Ubuntu + Nginx + PM2 + MongoDB local). Dominio: `cliquezoom.com.br`
-Path na VPS: `/var/www/clique-zoom`
+Deploy: **VPS Contabo** (Ubuntu + Nginx + PM2 + MongoDB local). Dominio: `fsfotografias.com.br`
+Path na VPS: `/var/www/fs-fotografias`
 
 ---
 
@@ -249,7 +249,7 @@ A galeria do cliente (`cliente/index.html` + `cliente/js/gallery.js`) e uma SPA 
 ### Funcionalidades:
 - **Login**: campo de codigo de acesso, validado via API
 - **Grid de fotos**: 2 colunas mobile, 3 tablet, 4 desktop
-- **Watermark**: overlay "CLIQUE·ZOOM" sobre cada foto (removido quando entregue)
+- **Watermark**: overlay "FS FOTOGRAFIAS" sobre cada foto (removido quando entregue)
 - **Selecao**: coracao no canto de cada foto, contador no topo e barra inferior fixa
 - **Fotos extras**: acima do limite do pacote mostra valor adicional (R$ X,XX)
 - **Lightbox**: visualizacao em tela cheia com navegacao por setas e swipe touch
@@ -633,7 +633,7 @@ container.querySelectorAll('.meu-item').forEach(item => {
 ## VARIAVEIS DE AMBIENTE
 
 ```
-MONGODB_URI=mongodb://localhost:27017/cliquezoom  # MongoDB local na VPS
+MONGODB_URI=mongodb://localhost:27017/fsfotografias  # MongoDB local na VPS
 ADMIN_PASSWORD=...                                # Senha admin (texto plano, legado)
 ADMIN_PASSWORD_HASH=...                           # Hash bcrypt da senha (preferido)
 JWT_SECRET=...                                    # Secret para assinar tokens
@@ -656,7 +656,7 @@ npm start            # Iniciar servidor (producao)
 ## DEPLOY NA VPS
 
 O app roda na VPS Contabo com Nginx como reverse proxy e PM2 como process manager.
-Path: `/var/www/clique-zoom`
+Path: `/var/www/fs-fotografias`
 
 ### Deploy de atualizacoes:
 ```bash
@@ -664,16 +664,16 @@ Path: `/var/www/clique-zoom`
 git add . && git commit -m "descricao" && git push
 
 # Na VPS (via SSH):
-cd /var/www/clique-zoom && git pull && npm install && pm2 restart cliquezoom
+cd /var/www/fs-fotografias && git pull && npm install && pm2 restart fsfotografias
 ```
 
 ### Estrutura do servidor:
 ```
 Nginx (porta 80/443)
-  ├── /uploads/     → /var/www/clique-zoom/uploads/ (static)
-  ├── /assets/      → /var/www/clique-zoom/assets/ (static)
-  ├── /admin/js/    → /var/www/clique-zoom/admin/js/ (static, ESM)
-  └── /*            → localhost:3000 (proxy para Node.js)
+  ├── /uploads/     → /var/www/fs-fotografias/uploads/ (static)
+  ├── /assets/      → /var/www/fs-fotografias/assets/ (static)
+  ├── /admin/js/    → /var/www/fs-fotografias/admin/js/ (static, ESM)
+  └── /*            → localhost:3002 (proxy para Node.js)
 
 PM2: gerencia processo Node.js (auto-restart)
 MongoDB: localhost:27017 (sempre conectado)
@@ -689,7 +689,7 @@ MongoDB: localhost:27017 (sempre conectado)
 - [ ] Se criou novo modelo: verificar se tem `timestamps: true`
 - [ ] Testar localmente com `npm run dev`
 - [ ] Commitar e push para GitHub
-- [ ] Na VPS: `cd /var/www/clique-zoom && git pull && npm install && pm2 restart cliquezoom`
+- [ ] Na VPS: `cd /var/www/fs-fotografias && git pull && npm install && pm2 restart fsfotografias`
 
 ---
 
@@ -727,7 +727,7 @@ Classes Tailwind padrao (nao arbitrarias) como `aspect-video`, `aspect-square`, 
 | Upload falha com 413 | Payload muito grande | Imagem e comprimida no client (1200px). Se persistir, verificar `client_max_body_size` no Nginx |
 | Portfolio mostra imagem quebrada | Item antigo sem campo `image` no MongoDB | `processRemoteData` ja filtra itens sem `image`; nao salvar itens sem URL |
 | App nao inicia | MongoDB desligado | `sudo systemctl start mongod` |
-| 502 Bad Gateway | Node.js caiu | `pm2 restart cliquezoom` e verificar logs: `pm2 logs cliquezoom` |
+| 502 Bad Gateway | Node.js caiu | `pm2 restart fsfotografias` e verificar logs: `pm2 logs fsfotografias` |
 
 ---
 

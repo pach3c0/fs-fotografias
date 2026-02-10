@@ -732,7 +732,7 @@ function showMaintenanceScreen(maintenance) {
     document.body.innerHTML = `
         <div style="position:fixed; inset:0; background:#000; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:2rem; z-index:9999; overflow-y:auto;">
             <div style="flex-shrink:0;">
-                <h1 style="font-family:'Playfair Display',serif; font-size:2rem; font-weight:bold; color:white; margin-bottom:0.5rem;">CLIQUE·ZOOM</h1>
+                <h1 style="font-family:'Playfair Display',serif; font-size:2rem; font-weight:bold; color:white; margin-bottom:0.5rem;">FS FOTOGRAFIAS</h1>
                 <div style="width:3rem; height:1px; background:#374151; margin:1.5rem auto;"></div>
                 <h2 style="font-size:1.5rem; color:#f3f4f6; margin-bottom:1rem;">${maintenance.title || 'Site em Manutencao'}</h2>
                 <p style="color:#9ca3af; font-size:1rem; max-width:30rem; line-height:1.6; margin:0 auto;">${maintenance.message || 'Estamos realizando manutencao. Volte em breve!'}</p>
@@ -793,18 +793,18 @@ function showMaintenanceScreen(maintenance) {
 // ========== COMPARTILHAMENTO ==========
 const SHARE_CONFIG = {
     portfolio: {
-        title: 'Galeria | CLIQUE·ZOOM',
+        title: 'Galeria | FS FOTOGRAFIAS',
         text: 'Confira essa galeria de fotos incrivel!',
         hash: '#portfolio'
     },
     albums: {
-        title: 'Albuns | CLIQUE·ZOOM',
-        text: 'Veja os albuns de fotos da CLIQUE·ZOOM!',
+        title: 'Albuns | FS FOTOGRAFIAS',
+        text: 'Veja os albuns de fotos da FS FOTOGRAFIAS!',
         hash: '#albums'
     },
     estudio: {
-        title: 'Estudio | CLIQUE·ZOOM',
-        text: 'Conheca o estudio da CLIQUE·ZOOM!',
+        title: 'Estudio | FS FOTOGRAFIAS',
+        text: 'Conheca o estudio da FS FOTOGRAFIAS!',
         hash: '#estudio'
     }
 };
@@ -822,8 +822,8 @@ function shareAlbum() {
     const albumTitle = titleEl ? titleEl.textContent : 'Album';
     const url = window.location.origin + '/#albums';
     doShare(
-        `${albumTitle} | CLIQUE·ZOOM`,
-        `Veja o album "${albumTitle}" da CLIQUE·ZOOM!`,
+        `${albumTitle} | FS FOTOGRAFIAS`,
+        `Veja o album "${albumTitle}" da FS FOTOGRAFIAS!`,
         url
     );
 }
