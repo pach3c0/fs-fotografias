@@ -35,6 +35,9 @@ app.get('/preview', (req, res) => {
   res.redirect('/?preview');
 });
 
+// Favicon handler (silence 404)
+app.get('/favicon.ico', (req, res) => res.status(204).end());
+
 // MongoDB connection
 const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/fsfotografias';
 let isConnected = false;
@@ -523,6 +526,9 @@ app.put('/api/sessions/:id/deliver', authenticateToken, async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+
+// Rota de Marketing
+app.use('/api', require('./routes/marketing'));
 
 // Iniciar servidor
 const PORT = process.env.PORT || 3000;
