@@ -17,6 +17,7 @@ router.get('/site-data', async (req, res) => {
 });
 
 router.get('/site-config', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
   try {
     if (mongoose.connection.readyState === 1) {
       const data = await SiteData.findOne().sort({ updatedAt: -1 }).lean();

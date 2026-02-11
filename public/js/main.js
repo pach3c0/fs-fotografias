@@ -746,7 +746,7 @@ async function init() {
         // Checar manutencao e carregar config (pular manutencao se URL tem ?preview)
         const isPreview = new URLSearchParams(window.location.search).has('preview');
         try {
-            const configRes = await fetch('/api/site-config');
+            const configRes = await fetch(`/api/site-config?t=${Date.now()}`);
             if (configRes.ok) {
                 const config = await configRes.json();
                 if (!isPreview && config.maintenance?.enabled) {
