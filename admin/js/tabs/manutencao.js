@@ -13,7 +13,7 @@ export async function renderManutencao(container) {
 
   const photosHtml = photos.map((photo, idx) => `
     <div class="carousel-item" style="position:relative; width:10rem; height:6.5rem; border-radius:0.5rem; overflow:hidden; flex-shrink:0; border:1px solid #374151;">
-      <img src="${resolveImagePath(photo.url)}" style="width:100%; height:100%; object-fit:cover; pointer-events:none; object-position:${photo.posX ?? 50}% ${photo.posY ?? 50}%; transform:scale(${photo.scale ?? 1});">
+      <img src="${resolveImagePath(photo.url)}" style="width:100%; height:100%; object-fit:cover; pointer-events:none; object-position:${photo.posX ?? 50}% ${photo.posY ?? 50}%; transform:scale(${photo.scale ?? 1}); transform-origin:${photo.posX ?? 50}% ${photo.posY ?? 50}%;">
       <div class="carousel-overlay" style="position:absolute; inset:0; background:rgba(0,0,0,0.5); opacity:0; transition:opacity 0.2s; display:flex; align-items:center; justify-content:center; gap:0.5rem;">
         <button onclick="editCarouselPhoto(${idx})" style="background:#3b82f6; color:white; padding:0.375rem; border-radius:9999px; border:none; cursor:pointer;" title="Enquadrar">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
@@ -98,7 +98,7 @@ export async function renderManutencao(container) {
             <div style="display:flex; gap:0.75rem; justify-content:center; flex-wrap:wrap;">
               ${photos.slice(0, 6).map(p => `
                 <div style="width:6rem; height:4rem; border-radius:0.375rem; overflow:hidden; opacity:0.8;">
-                  <img src="${resolveImagePath(p.url)}" style="width:100%; height:100%; object-fit:cover; object-position:${p.posX ?? 50}% ${p.posY ?? 50}%; transform:scale(${p.scale ?? 1});">
+                  <img src="${resolveImagePath(p.url)}" style="width:100%; height:100%; object-fit:cover; object-position:${p.posX ?? 50}% ${p.posY ?? 50}%; transform:scale(${p.scale ?? 1}); transform-origin:${p.posX ?? 50}% ${p.posY ?? 50}%;">
                 </div>
               `).join('')}
             </div>

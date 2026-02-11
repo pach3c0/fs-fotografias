@@ -22,7 +22,7 @@ export async function renderEstudio(container) {
       <div class="studio-photo-item" draggable="true" data-index="${idx}"
         style="position:relative; aspect-ratio:16/9; background:#374151; border-radius:0.5rem; overflow:hidden; cursor:move;">
         <img src="${resolveImagePath(p.image)}" alt="Estudio ${idx + 1}"
-          style="width:100%; height:100%; object-fit:cover; pointer-events:none; object-position:${posX}% ${posY}%; transform:scale(${scale});">
+          style="width:100%; height:100%; object-fit:cover; pointer-events:none; object-position:${posX}% ${posY}%; transform:scale(${scale}); transform-origin:${posX}% ${posY}%;">
         <div class="studio-overlay" style="position:absolute; inset:0; background:rgba(0,0,0,0.5); opacity:0; transition:opacity 0.2s; display:flex; align-items:center; justify-content:center; gap:0.5rem;">
           <button onclick="event.stopPropagation(); openStudioEditor(${idx})" style="background:#3b82f6; color:white; padding:0.5rem; border-radius:9999px; border:none; cursor:pointer;" title="Ajustar">
             ✏️

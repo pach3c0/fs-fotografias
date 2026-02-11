@@ -25,7 +25,7 @@ export async function renderSobre(container) {
       <div class="about-photo-item" data-index="${idx}"
         style="position:relative; aspect-ratio:1/1; background:#374151; border-radius:0.5rem; overflow:hidden;">
         <img src="${resolveImagePath(p.image)}" alt="Sobre ${idx + 1}"
-          style="width:100%; height:100%; object-fit:cover; pointer-events:none; object-position:${posX}% ${posY}%; transform:scale(${scale});">
+          style="width:100%; height:100%; object-fit:cover; pointer-events:none; object-position:${posX}% ${posY}%; transform:scale(${scale}); transform-origin:${posX}% ${posY}%;">
         <div class="about-overlay" style="position:absolute; inset:0; background:rgba(0,0,0,0.5); opacity:0; transition:opacity 0.2s; display:flex; align-items:center; justify-content:center; gap:0.5rem;">
           <button onclick="event.stopPropagation(); openSobreEditor(${idx})" style="background:#3b82f6; color:white; padding:0.5rem; border-radius:9999px; border:none; cursor:pointer;" title="Ajustar">
             ✏️

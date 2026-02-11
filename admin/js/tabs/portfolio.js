@@ -23,7 +23,7 @@ export async function renderPortfolio(container) {
       <div class="portfolio-item" draggable="true" data-index="${idx}"
         style="position:relative; aspect-ratio:3/4; background:#374151; border-radius:0.5rem; overflow:hidden; border:2px solid transparent; cursor:move;">
         <img src="${imgSrc}" alt="Portfolio ${idx + 1}"
-          style="width:100%; height:100%; object-fit:cover; pointer-events:none; object-position:${posX}% ${posY}%; transform:scale(${scale});">
+          style="width:100%; height:100%; object-fit:cover; pointer-events:none; object-position:${posX}% ${posY}%; transform:scale(${scale}); transform-origin:${posX}% ${posY}%;">
         <div class="photo-overlay" style="position:absolute; inset:0; background:rgba(0,0,0,0.5); opacity:0; transition:opacity 0.2s; display:flex; align-items:center; justify-content:center; gap:0.5rem;">
           <button onclick="event.stopPropagation(); openPhotoEditor(${idx})" style="background:#3b82f6; color:white; padding:0.5rem; border-radius:9999px; border:none; cursor:pointer;" title="Ajustar posição">
             ✏️
