@@ -794,7 +794,7 @@ function showMaintenanceScreen(maintenance) {
                     <div id="carouselTrack" style="display:flex; transition:transform 0.5s ease; will-change:transform;">
                         ${photos.map(p => `
                             <div style="min-width:100%; position:relative; overflow:hidden; aspect-ratio:16/9;">
-                                <img src="${p.url}" style="width:100%; height:100%; object-fit:cover; display:block; pointer-events:none; user-select:none; object-position:${p.posX ?? 50}% ${p.posY ?? 50}%; transform:scale(${p.scale ?? 1});" draggable="false">
+                                <img src="${resolveImagePath(p.url)}" style="width:100%; height:100%; object-fit:cover; display:block; pointer-events:none; user-select:none; object-position:${p.posX ?? 50}% ${p.posY ?? 50}%; transform:scale(${p.scale ?? 1}); transform-origin:${p.posX ?? 50}% ${p.posY ?? 50}%;" draggable="false">
                             </div>
                         `).join('')}
                     </div>
