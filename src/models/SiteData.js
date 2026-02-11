@@ -1,6 +1,11 @@
 const mongoose = require('mongoose');
 
 const SiteDataSchema = new mongoose.Schema({
+  logo: {
+    type: { type: String, default: 'text' },
+    text: { type: String, default: 'FS FOTOGRAFIAS' },
+    image: { type: String, default: '' }
+  },
   hero: {
     title: { type: String, default: '' },
     subtitle: { type: String, default: '' },

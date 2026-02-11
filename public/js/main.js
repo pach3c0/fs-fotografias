@@ -13,6 +13,11 @@ function processRemoteData(remote) {
 
     try {
         return {
+            logo: {
+                type: remote.logo?.type ?? 'text',
+                text: remote.logo?.text ?? 'FS FOTOGRAFIAS',
+                image: remote.logo?.image ?? ''
+            },
             hero: {
                 title: remote.hero?.title ?? "",
                 subtitle: remote.hero?.subtitle ?? "",
@@ -89,6 +94,21 @@ function processRemoteData(remote) {
 function render() {
     // Marca pagina como carregada (remove skeleton)
     document.body.classList.add('loaded');
+
+    // ===== LOGO =====
+    const navLogo = document.getElementById('dom-nav-logo');
+    const splashLogo = document.getElementById('dom-splash-logo');
+    
+    if (navLogo && store.logo) {
+        if (store.logo.type === 'image' && store.logo.image) {
+            navLogo.innerHTML = `<img src="${resolveImagePath(store.logo.image)}" alt="${store.logo.text}" class="h-10 w-auto object-contain">`;
+        } else {
+            navLogo.textContent = store.logo.text;
+        }
+    }
+    if (splashLogo && store.logo) {
+        splashLogo.textContent = store.logo.text; // Splash mantem texto por design
+    }
 
     // ===== HERO =====
     const heroImg = document.getElementById('dom-hero-img');
