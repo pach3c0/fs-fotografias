@@ -101,7 +101,7 @@ function render() {
     
     if (navLogo && store.logo) {
         if (store.logo.type === 'image' && store.logo.image) {
-            navLogo.innerHTML = `<img src="${resolveImagePath(store.logo.image)}" alt="${store.logo.text}" class="h-10 w-auto object-contain">`;
+            navLogo.innerHTML = `<img src="${resolveImagePath(store.logo.image)}" alt="${store.logo.text}" class="w-auto object-contain" style="height: 3.5rem;">`;
         } else {
             navLogo.textContent = store.logo.text;
         }
