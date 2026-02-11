@@ -1,68 +1,44 @@
 /**
- * Utilitários auxiliares para o painel admin
+ * Helper functions for Admin
  */
 
-/**
- * Resolve o caminho da imagem (URL do Cloudinary ou path local)
- */
 export function resolveImagePath(url) {
   if (!url) return '';
-  if (url.startsWith('http')) return url;
-  if (url.startsWith('/')) return url;
+  if (url.startsWith('http') || url.startsWith('https') || url.startsWith('/')) {
+    return url;
+  }
   return `/assets/${url}`;
 }
 
-/**
- * Formata data para exibição (DD/MM/AAAA)
- */
+export function generateId() {
+  return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+}
+
 export function formatDate(date) {
   if (!date) return '';
-  const d = new Date(date);
-  const day = String(d.getDate()).padStart(2, '0');
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const year = d.getFullYear();
-  return `${day}/${month}/${year}`;
+  return new Date(date).toLocaleDateString('pt-BR');
 }
 
-/**
- * Converte DD/MM/AAAA para ISO (YYYY-MM-DD)
- */
-export function convertDateToISO(dateStr) {
-  if (!dateStr || !dateStr.includes('/')) return new Date().toISOString().split('T')[0];
-  const [day, month, year] = dateStr.split('/');
-  return `${year}-${month}-${day}`;
-}
-
-/**
- * Cria um ID único
- */
-export function generateId() {
-  return `${Date.now()}-${Math.random().toString(36).substring(7)}`;
-}
-
-/**
- * Copia texto para clipboard
- */
 export function copyToClipboard(text) {
-  navigator.clipboard.writeText(text).then(() => {
-    alert('✅ Copiado!');
-  }).catch(() => {
-    alert('❌ Erro ao copiar');
-  });
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).catch(err => console.error('Erro ao copiar', err));
+  } else {
+    // Fallback
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    document.body.appendChild(textArea);
+    textArea.select();
+    document.execCommand("copy");
+    document.body.removeChild(textArea);
+  }
 }
 
-/**
- * Valida email
- */
-export function isValidEmail(email) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-}
-
-/**
- * Escapa HTML para segurança
- */
 export function escapeHtml(text) {
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
+  if (!text) return '';
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
 }

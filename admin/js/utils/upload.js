@@ -68,7 +68,7 @@ export async function uploadImage(file, authToken, onProgress = null) {
       if (xhr.status === 200) {
         try {
           const response = JSON.parse(xhr.responseText);
-          if (response.ok || response.success) {
+          if (response.success || response.ok) {
             resolve({
               url: response.url,
               filename: response.filename
