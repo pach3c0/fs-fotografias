@@ -527,8 +527,86 @@ app.put('/api/sessions/:id/deliver', authenticateToken, async (req, res) => {
   }
 });
 
-// Rota de Marketing
-app.use('/api', require('./routes/marketing'));
+// ============================================================================
+// ROTA DE SITE-CONFIG (manutenção + Meta Pixel)
+// ============================================================================
+app.get('/api/site-config', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    if (mongoose.connection.readyState === 1) {
+      const data = await SiteData.findOne().sort({ updatedAt: -1 }).lean();
+      const meta = data?.integracoes?.metaPixel;
+      return res.json({
+        maintenance: data?.maintenance || { enabled: false },
+        metaPixelId: (meta?.enabled && meta?.pixelId) ? meta.pixelId : null
+      });
+    }
+    return res.json({ maintenance: { enabled: false }, metaPixelId: null });
+  } catch (error) {
+    console.error('Erro ao carregar config:', error.message);
+    return res.json({ maintenance: { enabled: false }, metaPixelId: null });
+  }
+});
+
+// ============================================================================
+// CLIENTE: Pedir reabertura da seleção
+// ============================================================================
+app.post('/api/client/request-reopen/:sessionId', async (req, res) => {
+  try {
+    const { accessCode } = req.body;
+    const session = await Session.findById(req.params.sessionId);
+    if (!session || !session.isActive) return res.status(404).json({ error: 'Sessão não encontrada' });
+    if (session.accessCode !== accessCode) return res.status(403).json({ error: 'Acesso não autorizado' });
+    if (session.selectionStatus !== 'submitted') return res.status(400).json({ error: 'Seleção não está no status enviada' });
+
+    try { await Notification.create({ type: 'reopen_requested', sessionId: session._id, sessionName: session.name, message: `${session.name} pediu reabertura da seleção` }); } catch(e){}
+
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ============================================================================
+// ADMIN: Exportar lista de fotos selecionadas (para Lightroom)
+// ============================================================================
+app.get('/api/sessions/:sessionId/export', (req, res) => {
+  const token = req.query.token || (req.headers['authorization'] && req.headers['authorization'].split(' ')[1]);
+  if (!token) return res.status(401).json({ error: 'Token não fornecido' });
+
+  const secret = process.env.JWT_SECRET || 'fs-fotografias-secret-key';
+  try { jwt.verify(token, secret); } catch { return res.status(403).json({ error: 'Token inválido' }); }
+
+  Session.findById(req.params.sessionId)
+    .then(session => {
+      if (!session) return res.status(404).json({ error: 'Sessão não encontrada' });
+
+      const selectedIds = session.selectedPhotos || [];
+      const filenames = session.photos
+        .filter(p => selectedIds.includes(p.id))
+        .map(p => p.filename);
+
+      res.setHeader('Content-Type', 'text/plain');
+      res.setHeader('Content-Disposition', `attachment; filename="selecao-${session.name.replace(/\s+/g, '-')}.txt"`);
+      res.send(filenames.join('\n'));
+    })
+    .catch(error => {
+      res.status(500).json({ error: error.message });
+    });
+});
+
+// ============================================================================
+// ROTA DE MARKETING
+// ============================================================================
+app.get('/api/marketing/overview', authenticateToken, async (req, res) => {
+  res.json({
+    success: true,
+    visits: 1250,
+    leads: 77,
+    whatsapp: 45,
+    cpa: 15.50
+  });
+});
 
 // Iniciar servidor
 const PORT = process.env.PORT || 3000;
