@@ -5,7 +5,8 @@ const notificationSchema = new mongoose.Schema({
   sessionId: String,
   sessionName: String,
   message: String,
-  read: { type: Boolean, default: false }
+  read: { type: Boolean, default: false },
+  organizationId: { type: mongoose.Schema.Types.ObjectId, ref: 'Organization', index: true }
 }, { timestamps: true });
 
 module.exports = mongoose.model('Notification', notificationSchema);

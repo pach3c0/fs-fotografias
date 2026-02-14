@@ -37,24 +37,38 @@ function showLoginForm() {
   loginForm.style.display = 'flex';
 
   const loginBtn = loginForm.querySelector('button');
+  const emailInput = loginForm.querySelector('input[type="email"]');
   const passwordInput = loginForm.querySelector('input[type="password"]');
 
   const doLogin = async () => {
+    const email = emailInput?.value;
     const password = passwordInput?.value;
+    
+    // Suportar login legado (só senha) e novo (email + senha)
     if (!password) { alert('Digite a senha'); return; }
 
     try {
+      const body = email ? { email, password } : { password };
+      
       const response = await fetch('/api/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password })
+        body: JSON.stringify(body)
       });
 
-      if (!response.ok) throw new Error('Senha incorreta');
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Erro ao fazer login');
+      }
 
       const data = await response.json();
       appState.authToken = data.token;
+      appState.organizationId = data.organizationId || '';
+      
       localStorage.setItem('authToken', data.token);
+      if (data.organizationId) {
+        localStorage.setItem('organizationId', data.organizationId);
+      }
 
       loginForm.style.display = 'none';
       document.getElementById('adminPanel').style.display = 'flex';
@@ -70,6 +84,9 @@ function showLoginForm() {
   if (loginBtn) loginBtn.onclick = doLogin;
   if (passwordInput) {
     passwordInput.onkeydown = (e) => { if (e.key === 'Enter') doLogin(); };
+  }
+  if (emailInput) {
+    emailInput.onkeydown = (e) => { if (e.key === 'Enter') doLogin(); };
   }
 }
 
@@ -116,8 +133,10 @@ async function switchTab(tabName) {
 function logout() {
   stopNotificationPolling();
   appState.authToken = '';
+  appState.organizationId = '';
   appState.appData = {};
   localStorage.removeItem('authToken');
+  localStorage.removeItem('organizationId');
   document.getElementById('adminPanel').style.display = 'none';
   showLoginForm();
 }

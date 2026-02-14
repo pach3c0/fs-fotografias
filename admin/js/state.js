@@ -5,6 +5,7 @@
 
 export let appState = {
   authToken: localStorage.getItem('authToken') || '',
+  organizationId: localStorage.getItem('organizationId') || '',
   appData: {},
   currentTab: 'hero'
 };

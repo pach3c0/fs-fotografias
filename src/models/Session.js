@@ -23,7 +23,11 @@ const sessionSchema = new mongoose.Schema({
     // Config
     watermark: { type: Boolean, default: true },
     canShare: { type: Boolean, default: false },
-    isActive: { type: Boolean, default: true }
+    isActive: { type: Boolean, default: true },
+    organizationId: { type: mongoose.Schema.Types.ObjectId, ref: 'Organization', index: true }
 }, { timestamps: true });
+
+// Index composto para busca rápida de sessão por org + código
+sessionSchema.index({ organizationId: 1, accessCode: 1 });
 
 module.exports = mongoose.model('Session', sessionSchema);

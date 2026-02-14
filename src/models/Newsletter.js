@@ -6,10 +6,9 @@ const newsletterSchema = new mongoose.Schema({
     required: true,
     lowercase: true,
     trim: true,
-    unique: true,
     match: [/^\S+@\S+\.\S+$/, 'Email inválido']
-    // Unique constraint already creates an index
   },
+  organizationId: { type: mongoose.Schema.Types.ObjectId, ref: 'Organization', required: true },
   subscribedAt: {
     type: Date,
     default: Date.now
@@ -26,7 +25,8 @@ const newsletterSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Índice para busca rápida (não repetir email pois já é unique)
+// Index composto: permite mesmo email em diferentes orgs, mas único dentro da mesma org
+newsletterSchema.index({ organizationId: 1, email: 1 }, { unique: true });
 newsletterSchema.index({ active: 1, subscribedAt: -1 });
 
 module.exports = mongoose.model('Newsletter', newsletterSchema);
