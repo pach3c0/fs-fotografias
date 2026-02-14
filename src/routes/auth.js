@@ -5,6 +5,7 @@ const bcrypt = require('bcryptjs');
 const User = require('../models/User');
 const Organization = require('../models/Organization');
 const { authenticateToken, requireSuperadmin } = require('../middleware/auth');
+const { sendWelcomeEmail, sendApprovalEmail } = require('../utils/email');
 
 // Login com email + senha (novo) ou senha legada (compatibilidade)
 router.post('/login', async (req, res) => {
@@ -163,8 +164,11 @@ router.post('/auth/register', async (req, res) => {
     org.ownerId = user._id;
     await org.save();
 
-    res.status(201).json({ 
-      success: true, 
+    // Enviar email de boas-vindas (async, nao bloqueia resposta)
+    sendWelcomeEmail(user.email, user.name, org.slug).catch(() => {});
+
+    res.status(201).json({
+      success: true,
       message: 'Cadastro realizado! Aguarde a aprovação do administrador.',
       organizationSlug: org.slug
     });
@@ -236,9 +240,15 @@ router.put('/admin/organizations/:id/approve', authenticateToken, requireSuperad
       { approved: true }
     );
 
-    res.json({ 
-      success: true, 
-      message: `Organização "${org.name}" aprovada com sucesso!` 
+    // Enviar email de aprovação para o owner
+    const owner = await User.findById(org.ownerId);
+    if (owner) {
+      sendApprovalEmail(owner.email, owner.name, org.slug).catch(() => {});
+    }
+
+    res.json({
+      success: true,
+      message: `Organização "${org.name}" aprovada com sucesso!`
     });
   } catch (error) {
     console.error('Erro ao aprovar organização:', error);
