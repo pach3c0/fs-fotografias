@@ -21,6 +21,12 @@ app.use('/admin', express.static(path.join(__dirname, '../admin')));
 app.use('/cliente', express.static(path.join(__dirname, '../cliente')));
 app.use('/saas-admin', express.static(path.join(__dirname, '../saas-admin')));
 
+// Rota de Cadastro (Landing Page)
+app.use('/cadastro', express.static(path.join(__dirname, '../cadastro')));
+app.get('/cadastro', (req, res) => {
+  res.sendFile(path.join(__dirname, '../cadastro/index.html'));
+});
+
 // SPA route for client gallery
 app.get('/galeria/:id', (req, res) => {
   res.sendFile(path.join(__dirname, '../cliente/index.html'));
