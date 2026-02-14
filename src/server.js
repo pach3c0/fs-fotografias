@@ -19,6 +19,7 @@ app.use('/assets', express.static(path.join(__dirname, '../assets')));
 app.use(express.static(path.join(__dirname, '../public')));
 app.use('/admin', express.static(path.join(__dirname, '../admin')));
 app.use('/cliente', express.static(path.join(__dirname, '../cliente')));
+app.use('/saas-admin', express.static(path.join(__dirname, '../saas-admin')));
 
 // SPA route for client gallery
 app.get('/galeria/:id', (req, res) => {

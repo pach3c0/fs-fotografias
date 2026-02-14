@@ -189,13 +189,29 @@ router.post('/auth/verify', (req, res) => {
 // ROTAS DE ADMINISTRAÇÃO DE ORGANIZAÇÕES (superadmin only)
 // ============================================================================
 
-// Listar todas as organizações
+// Listar todas as organizações com métricas
 router.get('/admin/organizations', authenticateToken, requireSuperadmin, async (req, res) => {
   try {
+    const Session = require('../models/Session');
+
     const organizations = await Organization.find()
       .populate('ownerId', 'name email')
-      .sort({ createdAt: -1 });
-    res.json({ organizations });
+      .sort({ createdAt: -1 })
+      .lean();
+
+    // Buscar contagem de sessões por org em uma query
+    const sessionCounts = await Session.aggregate([
+      { $group: { _id: '$organizationId', count: { $sum: 1 }, photos: { $sum: { $size: '$photos' } } } }
+    ]);
+    const countMap = {};
+    sessionCounts.forEach(s => { countMap[s._id?.toString()] = { sessions: s.count, photos: s.photos }; });
+
+    const orgsWithStats = organizations.map(org => ({
+      ...org,
+      stats: countMap[org._id.toString()] || { sessions: 0, photos: 0 }
+    }));
+
+    res.json({ organizations: orgsWithStats });
   } catch (error) {
     console.error('Erro ao listar organizações:', error);
     res.status(500).json({ error: error.message });
@@ -226,6 +242,88 @@ router.put('/admin/organizations/:id/approve', authenticateToken, requireSuperad
     });
   } catch (error) {
     console.error('Erro ao aprovar organização:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Métricas gerais do SaaS
+router.get('/admin/saas/metrics', authenticateToken, requireSuperadmin, async (req, res) => {
+  try {
+    const Session = require('../models/Session');
+    const Notification = require('../models/Notification');
+    const Newsletter = require('../models/Newsletter');
+
+    const [totalOrgs, activeOrgs, totalUsers, totalSessions, totalPhotos, totalNewsletterSubs] = await Promise.all([
+      Organization.countDocuments(),
+      Organization.countDocuments({ isActive: true }),
+      User.countDocuments(),
+      Session.countDocuments(),
+      Session.aggregate([{ $project: { count: { $size: '$photos' } } }, { $group: { _id: null, total: { $sum: '$count' } } }]),
+      Newsletter.countDocuments()
+    ]);
+
+    res.json({
+      organizations: { total: totalOrgs, active: activeOrgs, pending: totalOrgs - activeOrgs },
+      users: totalUsers,
+      sessions: totalSessions,
+      photos: totalPhotos[0]?.total || 0,
+      newsletterSubs: totalNewsletterSubs
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Detalhes de uma organização específica
+router.get('/admin/organizations/:id/details', authenticateToken, requireSuperadmin, async (req, res) => {
+  try {
+    const Session = require('../models/Session');
+    const Newsletter = require('../models/Newsletter');
+    const fs = require('fs');
+    const path = require('path');
+
+    const org = await Organization.findById(req.params.id).populate('ownerId', 'name email');
+    if (!org) return res.status(404).json({ error: 'Organização não encontrada' });
+
+    const users = await User.find({ organizationId: org._id }).select('name email role approved createdAt');
+    const sessions = await Session.find({ organizationId: org._id }).select('name type mode selectionStatus photos createdAt');
+    const newsletterCount = await Newsletter.countDocuments({ organizationId: org._id });
+
+    // Calcular storage usado
+    let storageBytes = 0;
+    const orgUploadDir = path.join(__dirname, '../../uploads', org._id.toString());
+    function calcDirSize(dir) {
+      if (!fs.existsSync(dir)) return;
+      const entries = fs.readdirSync(dir, { withFileTypes: true });
+      for (const entry of entries) {
+        const fullPath = path.join(dir, entry.name);
+        if (entry.isDirectory()) calcDirSize(fullPath);
+        else storageBytes += fs.statSync(fullPath).size;
+      }
+    }
+    calcDirSize(orgUploadDir);
+
+    const totalPhotos = sessions.reduce((sum, s) => sum + (s.photos?.length || 0), 0);
+
+    res.json({
+      organization: org,
+      users,
+      stats: {
+        sessions: sessions.length,
+        photos: totalPhotos,
+        newsletterSubs: newsletterCount,
+        storageMB: Math.round(storageBytes / 1024 / 1024 * 100) / 100
+      },
+      recentSessions: sessions.slice(0, 10).map(s => ({
+        name: s.name,
+        type: s.type,
+        mode: s.mode,
+        status: s.selectionStatus,
+        photosCount: s.photos?.length || 0,
+        createdAt: s.createdAt
+      }))
+    });
+  } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
