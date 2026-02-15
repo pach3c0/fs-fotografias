@@ -79,6 +79,31 @@
         .detail-list li { padding: 0.375rem 0; border-bottom: 1px solid #334155; font-size: 0.8125rem; display: flex; justify-content: space-between; }
 
         .loading { text-align: center; padding: 3rem; color: #64748b; }
+
+        /* Tabs */
+        .tabs { display: flex; gap: 0; margin-bottom: 1.5rem; border-bottom: 1px solid #334155; }
+        .tab-btn { background: none; border: none; color: #94a3b8; padding: 0.75rem 1.25rem; font-size: 0.875rem; font-weight: 500; cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.15s; }
+        .tab-btn:hover { color: #e2e8f0; }
+        .tab-btn.active { color: #6366f1; border-bottom-color: #6366f1; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        /* Botões extras */
+        .btn-trash { background: #78350f; color: #fbbf24; }
+        .btn-trash:hover { background: #92400e; }
+        .btn-restore { background: #065f46; color: #6ee7b7; }
+        .btn-restore:hover { background: #047857; }
+        .btn-delete-permanent { background: #7f1d1d; color: #fca5a5; }
+        .btn-delete-permanent:hover { background: #991b1b; }
+
+        /* Modal confirmação */
+        .confirm-input { width: 100%; padding: 0.625rem 0.875rem; border: 1px solid #334155; border-radius: 0.375rem; background: #0f172a; color: #e2e8f0; font-size: 0.875rem; margin: 1rem 0; outline: none; }
+        .confirm-input:focus { border-color: #ef4444; }
+        .confirm-warning { color: #fbbf24; font-size: 0.8125rem; line-height: 1.6; margin-bottom: 0.5rem; }
+        .confirm-actions { display: flex; gap: 0.75rem; justify-content: flex-end; margin-top: 1rem; }
+        .btn-cancel { background: #334155; color: #94a3b8; padding: 0.5rem 1.25rem; border: none; border-radius: 0.375rem; font-size: 0.8125rem; cursor: pointer; }
+        .btn-confirm-delete { background: #dc2626; color: white; padding: 0.5rem 1.25rem; border: none; border-radius: 0.375rem; font-size: 0.8125rem; font-weight: 600; cursor: pointer; }
+        .btn-confirm-delete:disabled { background: #475569; cursor: not-allowed; }
     </style>
 </head>
 <body>
@@ -111,29 +136,79 @@
             <div class="loading">Carregando metricas...</div>
         </div>
 
-        <!-- Organizações -->
-        <div class="section-title">
-            <span>Organizacoes</span>
+        <!-- Tabs -->
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('orgs')">Organizacoes</button>
+            <button class="tab-btn" onclick="switchTab('trash')">Lixeira <span id="trashCount"></span></button>
         </div>
-        <div class="table-wrap">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Nome</th>
-                        <th>Slug</th>
-                        <th>Owner</th>
-                        <th>Plano</th>
-                        <th>Sessoes</th>
-                        <th>Fotos</th>
-                        <th>Status</th>
-                        <th>Criado em</th>
-                        <th>Acoes</th>
-                    </tr>
-                </thead>
-                <tbody id="orgsTable">
-                    <tr><td colspan="9" class="loading">Carregando...</td></tr>
-                </tbody>
-            </table>
+
+        <!-- Tab: Organizações -->
+        <div class="tab-content active" id="tabOrgs">
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Nome</th>
+                            <th>Slug</th>
+                            <th>Owner</th>
+                            <th>Plano</th>
+                            <th>Sessoes</th>
+                            <th>Fotos</th>
+                            <th>Status</th>
+                            <th>Criado em</th>
+                            <th>Acoes</th>
+                        </tr>
+                    </thead>
+                    <tbody id="orgsTable">
+                        <tr><td colspan="9" class="loading">Carregando...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Tab: Lixeira -->
+        <div class="tab-content" id="tabTrash">
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Nome</th>
+                            <th>Slug</th>
+                            <th>Owner</th>
+                            <th>Plano</th>
+                            <th>Excluido em</th>
+                            <th>Acoes</th>
+                        </tr>
+                    </thead>
+                    <tbody id="trashTable">
+                        <tr><td colspan="6" class="loading">Carregando...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de confirmação de delete definitivo -->
+    <div class="modal-overlay" id="confirmDeleteModal">
+        <div class="modal" style="width:32rem;">
+            <div class="modal-header">
+                <h2 style="color:#fca5a5;">Excluir Definitivamente</h2>
+                <button class="modal-close" onclick="closeConfirmDelete()">&times;</button>
+            </div>
+            <div>
+                <p class="confirm-warning">
+                    Esta acao e <strong>irreversivel</strong>. Todos os dados serao apagados permanentemente:
+                    usuarios, site, sessoes, fotos, newsletter e arquivos de upload.
+                </p>
+                <p style="color:#94a3b8; font-size:0.8125rem;">
+                    Digite o nome da organizacao para confirmar: <strong id="confirmOrgName" style="color:#f1f5f9;"></strong>
+                </p>
+                <input type="text" class="confirm-input" id="confirmInput" placeholder="Digite o nome da organizacao">
+                <div class="confirm-actions">
+                    <button class="btn-cancel" onclick="closeConfirmDelete()">Cancelar</button>
+                    <button class="btn-confirm-delete" id="confirmDeleteBtn" disabled onclick="executePermanentDelete()">Excluir Definitivamente</button>
+                </div>
+            </div>
         </div>
     </div>
 

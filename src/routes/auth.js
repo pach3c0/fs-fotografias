@@ -198,7 +198,7 @@ router.get('/admin/organizations', authenticateToken, requireSuperadmin, async (
   try {
     const Session = require('../models/Session');
 
-    const organizations = await Organization.find()
+    const organizations = await Organization.find({ deletedAt: null })
       .populate('ownerId', 'name email')
       .sort({ createdAt: -1 })
       .lean();
@@ -218,6 +218,20 @@ router.get('/admin/organizations', authenticateToken, requireSuperadmin, async (
     res.json({ organizations: orgsWithStats });
   } catch (error) {
     console.error('Erro ao listar organizações:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Listar organizações na lixeira (DEVE ficar antes das rotas com :id)
+router.get('/admin/organizations/trash', authenticateToken, requireSuperadmin, async (req, res) => {
+  try {
+    const organizations = await Organization.find({ deletedAt: { $ne: null } })
+      .populate('ownerId', 'name email')
+      .sort({ deletedAt: -1 })
+      .lean();
+
+    res.json({ organizations });
+  } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
@@ -334,6 +348,86 @@ router.get('/admin/organizations/:id/details', authenticateToken, requireSuperad
       }))
     });
   } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Mover organização para lixeira (soft delete)
+router.put('/admin/organizations/:id/trash', authenticateToken, requireSuperadmin, async (req, res) => {
+  try {
+    const org = await Organization.findById(req.params.id);
+    if (!org) return res.status(404).json({ error: 'Organização não encontrada' });
+
+    org.isActive = false;
+    org.deletedAt = new Date();
+    await org.save();
+
+    res.json({ success: true, message: `"${org.name}" movida para a lixeira` });
+  } catch (error) {
+    console.error('Erro ao mover para lixeira:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Restaurar organização da lixeira
+router.put('/admin/organizations/:id/restore', authenticateToken, requireSuperadmin, async (req, res) => {
+  try {
+    const org = await Organization.findById(req.params.id);
+    if (!org) return res.status(404).json({ error: 'Organização não encontrada' });
+
+    org.isActive = true;
+    org.deletedAt = null;
+    await org.save();
+
+    await User.updateMany({ organizationId: org._id }, { approved: true });
+
+    res.json({ success: true, message: `"${org.name}" restaurada com sucesso` });
+  } catch (error) {
+    console.error('Erro ao restaurar:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Delete definitivo (apaga TUDO da organização)
+router.delete('/admin/organizations/:id', authenticateToken, requireSuperadmin, async (req, res) => {
+  try {
+    const org = await Organization.findById(req.params.id);
+    if (!org) return res.status(404).json({ error: 'Organização não encontrada' });
+
+    // Segurança: só permite deletar orgs na lixeira
+    if (!org.deletedAt) {
+      return res.status(400).json({ error: 'Mova para a lixeira antes de excluir definitivamente' });
+    }
+
+    const orgId = org._id;
+    const Session = require('../models/Session');
+    const SiteData = require('../models/SiteData');
+    const Notification = require('../models/Notification');
+    const Newsletter = require('../models/Newsletter');
+    const fs = require('fs');
+    const path = require('path');
+
+    // Deletar todos os dados do banco
+    await Promise.all([
+      User.deleteMany({ organizationId: orgId }),
+      SiteData.deleteMany({ organizationId: orgId }),
+      Session.deleteMany({ organizationId: orgId }),
+      Notification.deleteMany({ organizationId: orgId }),
+      Newsletter.deleteMany({ organizationId: orgId })
+    ]);
+
+    // Deletar pasta de uploads
+    const uploadDir = path.join(__dirname, '../../uploads', orgId.toString());
+    if (fs.existsSync(uploadDir)) {
+      fs.rmSync(uploadDir, { recursive: true, force: true });
+    }
+
+    // Deletar a organização
+    await Organization.findByIdAndDelete(orgId);
+
+    res.json({ success: true, message: `"${org.name}" excluída definitivamente` });
+  } catch (error) {
+    console.error('Erro ao excluir definitivamente:', error);
     res.status(500).json({ error: error.message });
   }
 });

@@ -12,7 +12,8 @@ const organizationSchema = new mongoose.Schema({
   },
   ownerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   plan: { type: String, enum: ['free', 'basic', 'pro'], default: 'free' },
-  isActive: { type: Boolean, default: true }
+  isActive: { type: Boolean, default: true },
+  deletedAt: { type: Date, default: null }
 }, { timestamps: true });
 
 module.exports = mongoose.model('Organization', organizationSchema);

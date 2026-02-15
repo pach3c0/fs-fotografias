@@ -155,7 +155,8 @@ async function loadOrganizations() {
               <button class="btn btn-details" onclick="showDetails('${org._id}')">Detalhes</button>
               ${org.isActive
                 ? `<button class="btn btn-deactivate" onclick="deactivateOrg('${org._id}', '${esc(org.name)}')">Desativar</button>`
-                : `<button class="btn btn-approve" onclick="approveOrg('${org._id}', '${esc(org.name)}')">Aprovar</button>`
+                : `<button class="btn btn-approve" onclick="approveOrg('${org._id}', '${esc(org.name)}')">Aprovar</button>
+                   <button class="btn btn-trash" onclick="trashOrg('${org._id}', '${esc(org.name)}')">Excluir</button>`
               }
             </div>
           </td>
@@ -269,6 +270,136 @@ window.showDetails = async (id) => {
 
 window.closeModal = () => {
   document.getElementById('detailModal').classList.remove('active');
+};
+
+// ============================================================================
+// TABS
+// ============================================================================
+
+window.switchTab = (tab) => {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+  if (tab === 'trash') {
+    document.querySelectorAll('.tab-btn')[1].classList.add('active');
+    document.getElementById('tabTrash').classList.add('active');
+    loadTrash();
+  } else {
+    document.querySelectorAll('.tab-btn')[0].classList.add('active');
+    document.getElementById('tabOrgs').classList.add('active');
+  }
+};
+
+// ============================================================================
+// LIXEIRA
+// ============================================================================
+
+async function loadTrash() {
+  const tbody = document.getElementById('trashTable');
+  try {
+    const data = await apiRequest('GET', '/api/admin/organizations/trash');
+
+    if (!data.organizations.length) {
+      tbody.innerHTML = '<tr><td colspan="6" class="loading">Lixeira vazia</td></tr>';
+      document.getElementById('trashCount').textContent = '';
+      return;
+    }
+
+    document.getElementById('trashCount').textContent = `(${data.organizations.length})`;
+
+    tbody.innerHTML = data.organizations.map(org => {
+      const owner = org.ownerId;
+      const deletedDate = new Date(org.deletedAt).toLocaleDateString('pt-BR');
+      const daysAgo = Math.floor((Date.now() - new Date(org.deletedAt)) / 86400000);
+
+      return `
+        <tr>
+          <td style="font-weight:600;">${esc(org.name)}</td>
+          <td style="color:#94a3b8;">${esc(org.slug)}</td>
+          <td>${owner ? esc(owner.name || owner.email) : '-'}</td>
+          <td><span style="text-transform:uppercase; font-size:0.6875rem; color:#94a3b8;">${org.plan}</span></td>
+          <td style="color:#94a3b8; font-size:0.75rem;">${deletedDate} <span style="color:#64748b;">(${daysAgo}d atras)</span></td>
+          <td>
+            <div class="btn-actions">
+              <button class="btn btn-restore" onclick="restoreOrg('${org._id}', '${esc(org.name)}')">Restaurar</button>
+              <button class="btn btn-delete-permanent" onclick="openConfirmDelete('${org._id}', '${esc(org.name)}')">Excluir Definitivamente</button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  } catch (err) {
+    tbody.innerHTML = `<tr><td colspan="6" class="loading" style="color:#f87171;">Erro: ${err.message}</td></tr>`;
+  }
+}
+
+window.trashOrg = async (id, name) => {
+  if (!confirm(`Mover "${name}" para a lixeira?`)) return;
+  try {
+    await apiRequest('PUT', `/api/admin/organizations/${id}/trash`);
+    await loadDashboard();
+  } catch (err) {
+    alert('Erro: ' + err.message);
+  }
+};
+
+window.restoreOrg = async (id, name) => {
+  if (!confirm(`Restaurar "${name}"? A organizacao ficara ativa novamente.`)) return;
+  try {
+    await apiRequest('PUT', `/api/admin/organizations/${id}/restore`);
+    await loadTrash();
+    await loadDashboard();
+  } catch (err) {
+    alert('Erro: ' + err.message);
+  }
+};
+
+// ============================================================================
+// DELETE DEFINITIVO (com confirmação)
+// ============================================================================
+
+let pendingDeleteId = null;
+let pendingDeleteName = '';
+
+window.openConfirmDelete = (id, name) => {
+  pendingDeleteId = id;
+  pendingDeleteName = name;
+  document.getElementById('confirmOrgName').textContent = name;
+  document.getElementById('confirmInput').value = '';
+  document.getElementById('confirmDeleteBtn').disabled = true;
+  document.getElementById('confirmDeleteModal').classList.add('active');
+};
+
+window.closeConfirmDelete = () => {
+  document.getElementById('confirmDeleteModal').classList.remove('active');
+  pendingDeleteId = null;
+  pendingDeleteName = '';
+};
+
+document.getElementById('confirmInput').oninput = (e) => {
+  const match = e.target.value.trim() === pendingDeleteName;
+  document.getElementById('confirmDeleteBtn').disabled = !match;
+};
+
+window.executePermanentDelete = async () => {
+  if (!pendingDeleteId) return;
+  try {
+    document.getElementById('confirmDeleteBtn').textContent = 'Excluindo...';
+    document.getElementById('confirmDeleteBtn').disabled = true;
+    await apiRequest('DELETE', `/api/admin/organizations/${pendingDeleteId}`);
+    closeConfirmDelete();
+    await loadTrash();
+    await loadMetrics();
+  } catch (err) {
+    alert('Erro: ' + err.message);
+  } finally {
+    document.getElementById('confirmDeleteBtn').textContent = 'Excluir Definitivamente';
+  }
+};
+
+// Fechar modal confirmação ao clicar fora
+document.getElementById('confirmDeleteModal').onclick = (e) => {
+  if (e.target === document.getElementById('confirmDeleteModal')) closeConfirmDelete();
 };
 
 // ============================================================================
