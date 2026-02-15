@@ -6,21 +6,10 @@ const fs = require('fs');
 function createUploader(subdir, options = {}) {
   const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-      // Pegar organizationId do JWT (admin) ou do middleware tenant (público)
-      const organizationId = req.user?.organizationId || req.organizationId;
-      
-      if (!organizationId) {
-        return cb(new Error('organizationId não encontrado no request'));
-      }
-
-      // Construir path: /uploads/{orgId}/{subdir}/
-      const dir = path.join(__dirname, '../../uploads', organizationId.toString(), subdir);
-      
-      // Criar diretório se não existir
+      const dir = path.join(__dirname, '../../uploads', subdir);
       if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir, { recursive: true });
       }
-      
       cb(null, dir);
     },
     filename: (req, file, cb) => {

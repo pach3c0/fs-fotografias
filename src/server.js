@@ -19,13 +19,6 @@ app.use('/assets', express.static(path.join(__dirname, '../assets')));
 app.use(express.static(path.join(__dirname, '../public')));
 app.use('/admin', express.static(path.join(__dirname, '../admin')));
 app.use('/cliente', express.static(path.join(__dirname, '../cliente')));
-app.use('/saas-admin', express.static(path.join(__dirname, '../saas-admin')));
-
-// Rota de Cadastro (Landing Page)
-app.use('/cadastro', express.static(path.join(__dirname, '../cadastro')));
-app.get('/cadastro', (req, res) => {
-  res.sendFile(path.join(__dirname, '../cadastro/index.html'));
-});
 
 // SPA route for client gallery
 app.get('/galeria/:id', (req, res) => {
@@ -46,7 +39,6 @@ let isConnected = false;
 
 const connectWithRetry = async () => {
   if (isConnected) return;
-
   try {
     await mongoose.connect(mongoUri, {
       serverSelectionTimeoutMS: 30000,
@@ -78,47 +70,23 @@ const SiteData = require('./models/SiteData');
 app.get('/api/health', async (req, res) => {
   const readyState = mongoose.connection.readyState;
   const states = ['desconectado', 'conectado', 'conectando', 'desconectando'];
-
   try {
     const mongoTest = readyState === 1 ? await SiteData.findOne().lean() : null;
     res.json({
       ok: true,
       timestamp: new Date().toISOString(),
-      mongodb: {
-        state: readyState,
-        stateText: states[readyState] || 'desconhecido',
-        hasData: !!mongoTest
-      }
+      mongodb: { state: readyState, stateText: states[readyState] || 'desconhecido', hasData: !!mongoTest }
     });
   } catch (error) {
     res.status(500).json({
       ok: false,
       error: error.message,
-      mongodb: {
-        state: readyState,
-        stateText: states[readyState] || 'desconhecido'
-      }
+      mongodb: { state: readyState, stateText: states[readyState] || 'desconhecido' }
     });
   }
 });
 
-// ============================================================================
-// MIDDLEWARES
-// ============================================================================
-const { resolveTenant } = require('./middleware/tenant');
-
-// Aplicar resolveTenant nas rotas publicas (GET sem auth)
-// As rotas usam req.organizationId (do tenant) OU req.user.organizationId (do JWT)
-app.use('/api/site-data', resolveTenant);
-app.use('/api/hero', resolveTenant);
-app.use('/api/site-config', resolveTenant);
-app.use('/api/faq', resolveTenant);
-app.use('/api/newsletter/subscribe', resolveTenant);
-app.use('/api/client', resolveTenant);
-
-// ============================================================================
-// ROTAS (cada router montado apenas UMA vez)
-// ============================================================================
+// Rotas
 app.use('/api', require('./routes/auth'));
 app.use('/api', require('./routes/siteData'));
 app.use('/api', require('./routes/newsletter'));

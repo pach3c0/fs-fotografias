@@ -7,10 +7,9 @@ router.post('/newsletter/subscribe', async (req, res) => {
   try {
     const { email } = req.body;
     if (!email) return res.status(400).json({ error: 'Email obrigatório' });
-    await Newsletter.create({ email, organizationId: req.organizationId });
+    await Newsletter.create({ email });
     res.json({ success: true });
   } catch (error) {
-    // Violação de constraint único (email já cadastrado nessa org)
     if (error.code === 11000) {
       return res.status(409).json({ error: 'Email já cadastrado na newsletter' });
     }
@@ -20,7 +19,7 @@ router.post('/newsletter/subscribe', async (req, res) => {
 
 router.get('/newsletter', authenticateToken, async (req, res) => {
   try {
-    const list = await Newsletter.find({ organizationId: req.user.organizationId }).sort({ createdAt: -1 });
+    const list = await Newsletter.find({}).sort({ createdAt: -1 });
     res.json({ subscribers: list });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -29,10 +28,7 @@ router.get('/newsletter', authenticateToken, async (req, res) => {
 
 router.delete('/newsletter/:email', authenticateToken, async (req, res) => {
   try {
-    await Newsletter.findOneAndDelete({ 
-      email: req.params.email, 
-      organizationId: req.user.organizationId 
-    });
+    await Newsletter.findOneAndDelete({ email: req.params.email });
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: error.message });

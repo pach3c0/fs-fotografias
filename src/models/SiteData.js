@@ -38,8 +38,7 @@ const SiteDataSchema = new mongoose.Schema({
   faq: {
     faqs: { type: Array, default: [] }
   },
-  maintenance: { type: mongoose.Schema.Types.Mixed, default: { enabled: false } },
-  organizationId: { type: mongoose.Schema.Types.ObjectId, ref: 'Organization', index: true }
+  maintenance: { type: mongoose.Schema.Types.Mixed, default: { enabled: false } }
 }, { 
   timestamps: true,
   strict: false,
