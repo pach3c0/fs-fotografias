@@ -1,17 +1,40 @@
 /**
  * Cadastro - FS Fotografias SaaS
- * Logica do formulario de registro de novos fotografos
+ * Logica do formulario de registro, FAQ, planos e navegacao
  */
+
+// ============================================================================
+// PLAN SELECTION
+// ============================================================================
+
+var selectedPlan = 'free';
+
+document.querySelectorAll('[data-plan]').forEach(function (btn) {
+  btn.addEventListener('click', function (e) {
+    var plan = this.getAttribute('data-plan');
+    if (plan) {
+      selectedPlan = plan;
+      var names = { free: 'Free', basic: 'Basic', pro: 'Pro' };
+      document.getElementById('planSelectedName').textContent = names[plan] || plan;
+      document.getElementById('planSelected').style.display = 'block';
+    }
+  });
+});
+
+window.clearPlan = function () {
+  selectedPlan = 'free';
+  document.getElementById('planSelected').style.display = 'none';
+};
 
 // ============================================================================
 // SLUG SANITIZATION + PREVIEW
 // ============================================================================
 
-const slugInput = document.getElementById('slug');
-const slugPreview = document.getElementById('slugPreview');
+var slugInput = document.getElementById('slug');
+var slugPreview = document.getElementById('slugPreview');
 
 slugInput.addEventListener('input', function () {
-  let value = this.value
+  var value = this.value
     .toLowerCase()
     .replace(/\s+/g, '-')
     .replace(/[^a-z0-9-]/g, '')
@@ -31,11 +54,11 @@ slugInput.addEventListener('input', function () {
 // FORM SUBMISSION
 // ============================================================================
 
-const form = document.getElementById('registerForm');
-const submitBtn = document.getElementById('submitBtn');
-const formError = document.getElementById('formError');
-const successState = document.getElementById('successState');
-const successSlug = document.getElementById('successSlug');
+var form = document.getElementById('registerForm');
+var submitBtn = document.getElementById('submitBtn');
+var formError = document.getElementById('formError');
+var successState = document.getElementById('successState');
+var successSlug = document.getElementById('successSlug');
 
 function showError(msg) {
   formError.textContent = msg;
@@ -50,14 +73,14 @@ form.addEventListener('submit', async function (e) {
   e.preventDefault();
   hideError();
 
-  const name = document.getElementById('name').value.trim();
-  const email = document.getElementById('email').value.trim();
-  const orgName = document.getElementById('orgName').value.trim();
-  const slug = document.getElementById('slug').value.trim();
-  const password = document.getElementById('password').value;
-  const confirmPassword = document.getElementById('confirmPassword').value;
+  var name = document.getElementById('name').value.trim();
+  var email = document.getElementById('email').value.trim();
+  var orgName = document.getElementById('orgName').value.trim();
+  var slug = document.getElementById('slug').value.trim();
+  var password = document.getElementById('password').value;
+  var confirmPassword = document.getElementById('confirmPassword').value;
 
-  // Validacoes client-side
+  // Validacoes
   if (!name || !email || !orgName || !slug || !password) {
     showError('Preencha todos os campos.');
     return;
@@ -83,23 +106,22 @@ form.addEventListener('submit', async function (e) {
     return;
   }
 
-  // Enviar
   submitBtn.disabled = true;
   submitBtn.textContent = 'Criando conta...';
 
   try {
-    const res = await fetch('/api/auth/register', {
+    var res = await fetch('/api/auth/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password, name, orgName, slug })
+      body: JSON.stringify({ email: email, password: password, name: name, orgName: orgName, slug: slug })
     });
 
-    const data = await res.json();
+    var data = await res.json();
 
     if (res.ok && data.success) {
-      // Sucesso - mostrar tela de confirmacao
       form.style.display = 'none';
       form.nextElementSibling.style.display = 'none'; // form-footer
+      document.getElementById('planSelected').style.display = 'none';
       successSlug.textContent = data.organizationSlug + '.fsfotografias.com.br';
       successState.style.display = 'block';
     } else {
@@ -119,8 +141,8 @@ form.addEventListener('submit', async function (e) {
 
 document.querySelectorAll('.faq-question').forEach(function (btn) {
   btn.addEventListener('click', function () {
-    const answer = this.nextElementSibling;
-    const isOpen = this.classList.contains('active');
+    var answer = this.nextElementSibling;
+    var isOpen = this.classList.contains('active');
 
     // Fechar todos
     document.querySelectorAll('.faq-question').forEach(function (b) {
@@ -142,10 +164,24 @@ document.querySelectorAll('.faq-question').forEach(function (btn) {
 
 document.querySelectorAll('a[href^="#"]').forEach(function (anchor) {
   anchor.addEventListener('click', function (e) {
-    e.preventDefault();
-    var target = document.querySelector(this.getAttribute('href'));
+    var href = this.getAttribute('href');
+    var target = document.querySelector(href);
     if (target) {
+      e.preventDefault();
       target.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   });
+});
+
+// ============================================================================
+// NAV SCROLL SHADOW
+// ============================================================================
+
+var nav = document.querySelector('.nav');
+window.addEventListener('scroll', function () {
+  if (window.scrollY > 10) {
+    nav.style.boxShadow = '0 1px 8px rgba(0,0,0,0.06)';
+  } else {
+    nav.style.boxShadow = 'none';
+  }
 });
